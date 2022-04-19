@@ -1046,10 +1046,11 @@ PYBIND11_MODULE(ncnn, m)
             py::arg("index"), py::arg("creator"), py::arg("destroyer"))
 #if NCNN_STRING
         .def("load_param", (int(Net::*)(const DataReader&)) & Net::load_param, py::arg("dr"))
+        .def("load_param_buf", (int(Net::*)(const unsigned char*)) & Net::load_param, py::arg("_mem"))
 #endif // NCNN_STRING
         .def("load_param_bin", (int(Net::*)(const DataReader&)) & Net::load_param_bin, py::arg("dr"))
         .def("load_model", (int(Net::*)(const DataReader&)) & Net::load_model, py::arg("dr"))
-        .def("load_model", (int(Net::*)(const unsigned char*)) & Net::load_model, py::arg("_mem"))
+        .def("load_model_buf", (int(Net::*)(const unsigned char*)) & Net::load_model, py::arg("_mem"))
 
 #if NCNN_STDIO
 #if NCNN_STRING
