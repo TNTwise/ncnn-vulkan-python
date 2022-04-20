@@ -1768,6 +1768,112 @@ int Net::load_param_bin(const DataReader& dr)
     return 0;
 }
 
+int Net::load_model_from_model_bin(const ModelBinFromMatArray& mb)
+{
+    if (d->layers.empty())
+    {
+        NCNN_LOGE("network graph not ready");
+        return -1;
+    }
+
+    int layer_count = (int)d->layers.size();
+
+    // load file
+    int ret = 0;
+
+    for (int i = 0; i < layer_count; i++)
+    {
+        Layer* layer = d->layers[i];
+
+        //Here we found inconsistent content in the parameter file.
+        if (!layer)
+        {
+            NCNN_LOGE("load_model error at layer %d, parameter file has inconsistent content.", i);
+            ret = -1;
+            break;
+        }
+
+        int lret = layer->load_model(mb);
+        if (lret != 0)
+        {
+#if NCNN_STRING
+            NCNN_LOGE("layer load_model %d %s failed", i, layer->name.c_str());
+#else
+            NCNN_LOGE("layer load_model %d failed", i);
+#endif
+            ret = -1;
+            break;
+        }
+
+        if (layer->support_int8_storage)
+        {
+            // no int8 gpu support yet
+            opt.use_vulkan_compute = false;
+        }
+    }
+
+    if (opt.use_vulkan_compute)
+    {
+        if (!opt.pipeline_cache)
+        {
+            if (!d->pipeline_cache)
+                d->pipeline_cache = new PipelineCache(d->vkdev);
+            opt.pipeline_cache = d->pipeline_cache;
+        }
+    }
+
+    for (int i = 0; i < layer_count; i++)
+    {
+        Layer* layer = d->layers[i];
+
+        Option opt1 = opt;
+
+        if (opt.use_vulkan_compute)
+        {
+            if (!layer->support_image_storage) opt1.use_image_storage = false;
+        }
+
+        int cret = layer->create_pipeline(opt1);
+        if (cret != 0)
+        {
+#if NCNN_STRING
+            NCNN_LOGE("layer create_pipeline %d %s failed", i, layer->name.c_str());
+#else
+            NCNN_LOGE("layer create_pipeline %d failed", i);
+#endif
+            ret = -1;
+            break;
+        }
+    }
+
+    if (opt.use_local_pool_allocator)
+    {
+        if (opt.blob_allocator == 0)
+        {
+            if (!d->local_blob_allocator)
+            {
+                d->local_blob_allocator = new PoolAllocator;
+                d->local_blob_allocator->set_size_compare_ratio(0.f);
+            }
+        }
+        if (opt.workspace_allocator == 0)
+        {
+            if (!d->local_workspace_allocator)
+            {
+                d->local_workspace_allocator = new PoolAllocator;
+                d->local_workspace_allocator->set_size_compare_ratio(0.5f);
+            }
+        }
+    }
+
+    if (opt.use_vulkan_compute)
+    {
+        d->upload_model();
+    }
+
+    return ret;
+}
+
 int Net::load_model(const DataReader& dr)
 {
     if (d->layers.empty())

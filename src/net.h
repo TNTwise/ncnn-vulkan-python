@@ -70,6 +70,7 @@ public:
 
     int load_param_bin(const DataReader& dr);
 
+    int load_model_from_model_bin(const ModelBinFromMatArray& mb);
     int load_model(const DataReader& dr);
 
 #if NCNN_STDIO

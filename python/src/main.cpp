@@ -1050,7 +1050,7 @@ PYBIND11_MODULE(ncnn, m)
 #endif // NCNN_STRING
         .def("load_param_bin", (int(Net::*)(const DataReader&)) & Net::load_param_bin, py::arg("dr"))
         .def("load_model", (int(Net::*)(const DataReader&)) & Net::load_model, py::arg("dr"))
-        .def("load_model_buf", (int(Net::*)(const unsigned char*)) & Net::load_model, py::arg("_mem"))
+        .def("load_model_from_model_bin", (int(Net::*)(ModelBinFromMatArray*)) & Net::load_model_from_model_bin, py::arg("mb"))
 
 #if NCNN_STDIO
 #if NCNN_STRING
