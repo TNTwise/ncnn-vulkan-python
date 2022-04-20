@@ -20,7 +20,8 @@ def find_version():
         # ncnn_version = time.strftime("1.%Y%m%d.%H%M%S", time.localtime())
         # return version_major[0] + "." + version_minor[0] + "." + ncnn_version
 
-        ncnn_version = time.strftime("%Y.%m.%d", time.localtime())
+        # ncnn_version = time.strftime("%Y.%m.%d", time.localtime())
+        ncnn_version = "2022.4.21"
         return ncnn_version
     raise RuntimeError("Unable to find version string.")
 
@@ -46,8 +47,7 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(
-            self.get_ext_fullpath(ext.name)))
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "ncnn_vulkan")
 
         # required for auto-detection of auxiliary "native" libs
@@ -79,8 +79,7 @@ class CMakeBuild(build_ext):
 
         if self.compiler.compiler_type == "msvc":
             # Single config generators are handled "normally"
-            single_config = any(
-                x in cmake_generator for x in {"NMake", "Ninja"})
+            single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
 
             # CMake allows an arch-in-generator style for backward compatibility
             contains_arch = any(x in cmake_generator for x in {"ARM", "Win64"})
@@ -94,8 +93,7 @@ class CMakeBuild(build_ext):
             # Multi-config generators have a different way to specify configs
             if not single_config:
                 cmake_args += [
-                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(
-                        cfg.upper(), extdir)
+                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
                 ]
                 build_args += ["--config", cfg]
 
