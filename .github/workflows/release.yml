@@ -3,7 +3,8 @@ on:
   push:
     tags:
       - "*"
-
+env:
+  DEVELOPER_DIR: /Applications/Xcode_12.2.app/Contents/Developer
 jobs:
   setup:
     permissions:
@@ -189,7 +190,7 @@ jobs:
           find vulkansdk-macos-1.2.162.0 -type f | grep -v -E 'vulkan|glslang|MoltenVK' | xargs rm
           hdiutil detach /Volumes/vulkansdk-macos-1.2.162.0
       - name: protobuf
-        run: brew install protobuf opencv3
+        run: brew install protobuf opencv
       - name: cache-openmp
         id: cache-openmp
         uses: actions/cache@v2.1.6
