@@ -258,7 +258,7 @@ jobs:
       - name: Build
         run: |
           export VULKAN_SDK=`pwd`/vulkansdk-macos-1.2.162.0/macOS
-          export CMAKE_FLAGS="-DUSE_STATIC_MOLTENVK=ON -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+          export CMAKE_FLAGS="-DUSE_STATIC_MOLTENVK=ON -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
           -DVulkan_INCLUDE_DIR=`pwd`/vulkansdk-macos-1.2.162.0/MoltenVK/include \
           -DVulkan_LIBRARY=`pwd`/vulkansdk-macos-1.2.162.0/MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/libMoltenVK.a \
           -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
