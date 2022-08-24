@@ -259,7 +259,7 @@ jobs:
       #     cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: "3.10"
           architecture: x64
       - name: Check Python version
         run: |
