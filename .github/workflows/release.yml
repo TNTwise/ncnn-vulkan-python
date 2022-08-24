@@ -167,13 +167,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          [
-            "cp36-macosx_arm64",
-            "cp37-macosx_arm64",
-            "cp38-macosx_arm64",
-            "cp39-macosx_arm64",
-            "cp310-macosx_arm64",
-          ]
+          ["cp38-macosx_arm64", "cp39-macosx_arm64", "cp310-macosx_arm64"]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: arm64
