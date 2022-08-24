@@ -166,10 +166,18 @@ jobs:
     needs: [setup, create-release]
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        python-version:
+          [
+            "cp36-macosx_arm64",
+            "cp37-macosx_arm64",
+            "cp38-macosx_arm64",
+            "cp39-macosx_arm64",
+            "cp310-macosx_arm64",
+          ]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: arm64
+      CIBW_BUILD: ${{ matrix.python-version }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -251,7 +259,7 @@ jobs:
       #     cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.10
           architecture: x64
       - name: Check Python version
         run: |
@@ -270,8 +278,7 @@ jobs:
           -DVulkan_LIBRARY=`pwd`/../vulkansdk-macos-1.2.162.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
           -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
           -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
-          -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-          -DPY_VERSION=${{ matrix.python-version }} ..
+          -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" ..
           make
           make install
           cd ..
