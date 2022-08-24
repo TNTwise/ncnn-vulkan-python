@@ -217,38 +217,6 @@ jobs:
         run: |
           sudo cp $GITHUB_WORKSPACE/openmp-install/include/* $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
           sudo cp $GITHUB_WORKSPACE/openmp-install/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
-      # - name: cache-swiftshader
-      #   id: cache-swiftshader
-      #   uses: actions/cache@v2.1.6
-      #   with:
-      #     path: swiftshader-install
-      #     key: swiftshader-macos-install-20200508
-      # - name: checkout-swiftshader
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: google/swiftshader
-      #     path: swiftshader
-      #     ref: 2dd864470e310d173d35fa95ca3a14d216734aab
-      # - name: checkout-swiftshader-submodules
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   run: |
-      #     cd swiftshader
-      #     git submodule update --init --recursive
-      # - name: swiftshader
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   run: |
-      #     cd swiftshader
-      #     # workaround ar build issue on macos
-      #     sed -i -e 's!^  for (const auto b : work_list) {$!  for (const auto\& b : work_list) {!' third_party/SPIRV-Tools/source/cfa.h
-      #     mkdir -p build; cd build
-      #     cmake -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE \
-      #     -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES="arm64" \
-      #     -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE \
-      #     -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
-      #     cmake --build . -j 2
-      #     mkdir $GITHUB_WORKSPACE/swiftshader-install
-      #     cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
@@ -263,7 +231,7 @@ jobs:
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           mkdir build && cd build
-          cmake -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 \
+          cmake -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 -NCNN_TARGET_ARCH=arm \
             -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
             -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
             -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
