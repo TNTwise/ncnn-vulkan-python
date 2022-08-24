@@ -169,6 +169,7 @@ jobs:
         python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
+      CIBW_ARCHS: arm64
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -206,7 +207,7 @@ jobs:
           sed -i'' -e '/.size __kmp_unnamed_critical_addr/d' runtime/src/z_Linux_asm.S
           sed -i'' -e 's/__kmp_unnamed_critical_addr/___kmp_unnamed_critical_addr/g' runtime/src/z_Linux_asm.S
           mkdir -p build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES="arm64" \
               -DLIBOMP_ENABLE_SHARED=OFF -DLIBOMP_OMPT_SUPPORT=OFF -DLIBOMP_USE_HWLOC=OFF ..
           cmake --build . -j 3
           cmake --build . --target install
@@ -241,11 +242,14 @@ jobs:
           # workaround ar build issue on macos
           sed -i -e 's!^  for (const auto b : work_list) {$!  for (const auto\& b : work_list) {!' third_party/SPIRV-Tools/source/cfa.h
           mkdir -p build; cd build
-          cmake -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE \
+          -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES="arm64" \
+          -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE \
+          -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
           cmake --build . -j 2
           mkdir $GITHUB_WORKSPACE/swiftshader-install
           cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -254,7 +258,7 @@ jobs:
           python --version
       - name: Install dependencies
         run: |
-          pip install build twine
+          pip install build twine cibuildwheel
       - name: Build
         run: |
           export VULKAN_SDK=`pwd`/vulkansdk-macos-1.2.162.0/macOS
@@ -271,7 +275,7 @@ jobs:
           make
           make install
           cd ..
-          python -m build -w .
+          python -m cibuildwheel --output-dir dist
           brew install rename
           rename -v 's/x86_64/arm64/' dist/*
       - name: Package
