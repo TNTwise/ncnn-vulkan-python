@@ -1,12 +1,5 @@
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
-add_executable(solver solver.cc)
-target_link_libraries(solver PRIVATE "${OpenMP_CXX_FLAGS}")
-target_compile_options(solver PRIVATE "${OpenMP_CXX_FLAGS}")
-
-find_package(Vulkan REQUIRED)
-link_libraries(Vulkan::Vulkan)
-
 if(CMAKE_TOOLCHAIN_FILE)
     set(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are compiled to")
 
@@ -59,6 +52,12 @@ if(POLICY CMP0025)
 endif()
 
 project(ncnn)
+
+find_package(OpenMP REQUIRED)
+link_libraries(OpenMP::OpenMP_CXX)
+
+find_package(Vulkan REQUIRED)
+link_libraries(Vulkan::Vulkan)
 
 if(MSVC AND NOT CMAKE_VERSION VERSION_LESS "3.15")
     option(NCNN_BUILD_WITH_STATIC_CRT "Enables use of statically linked CRT for statically linked ncnn" OFF)
