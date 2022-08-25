@@ -1,7 +1,8 @@
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
-find_package(OpenMP REQUIRED)
-link_libraries(OpenMP::OpenMP_CXX)
+add_executable(solver solver.cc)
+target_link_libraries(solver PRIVATE "${OpenMP_CXX_FLAGS}")
+target_compile_options(solver PRIVATE "${OpenMP_CXX_FLAGS}")
 
 find_package(Vulkan REQUIRED)
 link_libraries(Vulkan::Vulkan)
