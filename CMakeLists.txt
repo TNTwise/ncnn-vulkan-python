@@ -1,6 +1,10 @@
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+find_package(OpenMP REQUIRED)
+link_libraries(OpenMP::OpenMP_CXX)
+
+find_package(Vulkan REQUIRED)
+link_libraries(Vulkan::Vulkan)
 
 if(CMAKE_TOOLCHAIN_FILE)
     set(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are compiled to")
