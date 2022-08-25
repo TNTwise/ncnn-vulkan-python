@@ -56,6 +56,12 @@ project(ncnn)
 find_package(OpenMP REQUIRED)
 link_libraries(OpenMP::OpenMP_CXX)
 
+set(OpenMP_C_FLAGS "-Xclang -fopenmp")
+set(OpenMP_CXX_FLAGS "-Xclang -fopenmp")
+set(OpenMP_C_LIB_NAMES "libomp")
+set(OpenMP_CXX_LIB_NAMES "libomp")
+set(OpenMP_libomp_LIBRARY "$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a")
+
 find_package(Vulkan REQUIRED)
 link_libraries(Vulkan::Vulkan)
 
