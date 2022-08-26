@@ -46,8 +46,7 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(
-            self.get_ext_fullpath(ext.name)))
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "ncnn_vulkan")
 
         # required for auto-detection of auxiliary "native" libs
@@ -74,13 +73,21 @@ class CMakeBuild(build_ext):
             "-DNCNN_BUILD_EXAMPLES=OFF",
             "-DNCNN_BUILD_TOOLS=OFF",
             "-DNCNN_VULKAN=ON",
+            '-DOpenMP_C_FLAGS "-Xclang -fopenmp"',
+            '-DOpenMP_CXX_FLAGS "-Xclang -fopenmp"',
+            '-DOpenMP_C_LIB_NAMES "libomp"',
+            '-DOpenMP_CXX_LIB_NAMES "libomp"',
+            '-DOpenMP_libomp_LIBRARY "/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a"',
+            "-DCMAKE_CROSSCOMPILING=ON",
+            "-DCMAKE_SYSTEM_PROCESSOR=arm64",
+            "-DCMAKE_OSX_ARCHITECTURES=arm64",
+            "-DNCNN_TARGET_ARCH=arm",
         ]
         build_args = []
 
         if self.compiler.compiler_type == "msvc":
             # Single config generators are handled "normally"
-            single_config = any(
-                x in cmake_generator for x in {"NMake", "Ninja"})
+            single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
 
             # CMake allows an arch-in-generator style for backward compatibility
             contains_arch = any(x in cmake_generator for x in {"ARM", "Win64"})
@@ -94,8 +101,7 @@ class CMakeBuild(build_ext):
             # Multi-config generators have a different way to specify configs
             if not single_config:
                 cmake_args += [
-                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(
-                        cfg.upper(), extdir)
+                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
                 ]
                 build_args += ["--config", cfg]
 
