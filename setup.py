@@ -82,7 +82,7 @@ class CMakeBuild(build_ext):
             "-DCMAKE_SYSTEM_PROCESSOR=arm64",
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
             "-DNCNN_TARGET_ARCH=arm",
-            f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include"
+            f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include",
             f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
         ]
         build_args = []
