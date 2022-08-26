@@ -230,19 +230,20 @@ jobs:
       - name: Build
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
-          mkdir prebuild && cd prebuild
-          cmake -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 -DNCNN_TARGET_ARCH=arm \
-            -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
-            -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
-            -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-            -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include \
-            -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
-            -DNCNN_VULKAN=ON -DNCNN_BUILD_TOOLS=OFF -DNCNN_BUILD_EXAMPLES=OFF ..
-          cmake --build . -j 3
-          cd ..
+          export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
+          # mkdir prebuild && cd prebuild
+          # cmake -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 -DNCNN_TARGET_ARCH=arm \
+          #   -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
+          #   -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
+          #   -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
+          #   -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include \
+          #   -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
+          #   -DNCNN_VULKAN=ON -DNCNN_BUILD_TOOLS=OFF -DNCNN_BUILD_EXAMPLES=OFF ..
+          # cmake --build . -j 3
+          # cd ..
           python -m cibuildwheel --output-dir dist
-          brew install rename
-          rename -v 's/x86_64/arm64/' dist/*
+          # brew install rename
+          # rename -v 's/x86_64/arm64/' dist/*
       - name: Package
         run: |
           mkdir -p ${{ env.PACKAGENAME }}

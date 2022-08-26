@@ -82,6 +82,8 @@ class CMakeBuild(build_ext):
             "-DCMAKE_SYSTEM_PROCESSOR=arm64",
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
             "-DNCNN_TARGET_ARCH=arm",
+            f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include"
+            f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
         ]
         build_args = []
 
@@ -119,13 +121,13 @@ class CMakeBuild(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
-        # subprocess.check_call(
-        #     ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp
-        # )
-        # subprocess.check_call(
-        #     ["cmake", "--build", "."] + build_args, cwd=self.build_temp
-        # )
-        subprocess.check_call(["cp", "-a", "prebuild", self.build_temp])
+        subprocess.check_call(
+            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp
+        )
+        subprocess.check_call(
+            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
+        )
+        # subprocess.check_call(["cp", "-a", "prebuild", self.build_temp])
 
 
 if sys.version_info < (3, 0):
