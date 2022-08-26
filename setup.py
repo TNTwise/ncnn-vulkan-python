@@ -125,7 +125,7 @@ class CMakeBuild(build_ext):
         # subprocess.check_call(
         #     ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         # )
-        subprocess.check_call(["cp", "-a", "/build/.", self.build_temp])
+        subprocess.check_call(["cp", "-a", "build", self.build_temp])
 
 
 if sys.version_info < (3, 0):
