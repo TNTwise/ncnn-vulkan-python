@@ -247,7 +247,7 @@ jobs:
             -DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,\
             -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,\
             -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,\
-            -DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF
+            -DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
           # brew install rename
           # rename -v 's/x86_64/arm64/' dist/*
