@@ -1,5 +1,8 @@
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+
 if(CMAKE_TOOLCHAIN_FILE)
     set(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are compiled to")
+
     # get absolute path, but get_filename_component ABSOLUTE only refer with source dir, so find_file here :(
     get_filename_component(CMAKE_TOOLCHAIN_FILE_NAME ${CMAKE_TOOLCHAIN_FILE} NAME)
     find_file(CMAKE_TOOLCHAIN_FILE ${CMAKE_TOOLCHAIN_FILE_NAME} PATHS ${CMAKE_SOURCE_DIR} NO_DEFAULT_PATH)
@@ -9,6 +12,7 @@ endif()
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
 endif()
+
 message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 if(NOT DEFINED NCNN_VERSION)
@@ -19,6 +23,7 @@ set(NCNN_VERSION_MAJOR 1)
 set(NCNN_VERSION_MINOR 0)
 set(NCNN_VERSION_PATCH ${NCNN_VERSION})
 set(NCNN_VERSION_STRING ${NCNN_VERSION_MAJOR}.${NCNN_VERSION_MINOR}.${NCNN_VERSION_PATCH})
+
 if(APPLE OR IOS)
     # macos / ios only accepts a.b.c.d.e where a=24bit b/c/d/e=10bit
     # 20201228 to 20.12.28
@@ -27,6 +32,7 @@ if(APPLE OR IOS)
     string(SUBSTRING ${NCNN_VERSION} 6 2 NCNN_VERSION_DAY)
     set(NCNN_VERSION_STRING ${NCNN_VERSION_MAJOR}.${NCNN_VERSION_MINOR}.${NCNN_VERSION_YEAR}.${NCNN_VERSION_MONTH}.${NCNN_VERSION_DAY})
 endif()
+
 message(STATUS "NCNN_VERSION_STRING = ${NCNN_VERSION_STRING}")
 
 cmake_minimum_required(VERSION 2.8.12)
@@ -47,8 +53,19 @@ endif()
 
 project(ncnn)
 
+if(APPLE)
+    find_package(OpenMP REQUIRED)
+    link_libraries(OpenMP::OpenMP_CXX)
+endif()
+
+if(NCNN_VULKAN)
+    find_package(Vulkan REQUIRED)
+    link_libraries(Vulkan::Vulkan)
+endif()
+
 if(MSVC AND NOT CMAKE_VERSION VERSION_LESS "3.15")
     option(NCNN_BUILD_WITH_STATIC_CRT "Enables use of statically linked CRT for statically linked ncnn" OFF)
+
     if(NCNN_BUILD_WITH_STATIC_CRT)
         # cmake before version 3.15 not work
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -114,6 +131,7 @@ if(NCNN_SHARED_LIB)
         set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
         include(CheckIPOSupported)
         check_ipo_supported(RESULT ipo_supported OUTPUT ipo_supported_output)
+
         if(ipo_supported)
             set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
         else()
@@ -128,29 +146,31 @@ if(NOT NCNN_STDIO OR NOT NCNN_STRING)
         message(WARNING "NCNN_STDIO or NCNN_STRING disabled, NCNN_BUILD_TOOLS will be turned off.")
         set(NCNN_BUILD_TOOLS OFF)
     endif()
+
     if(NCNN_BUILD_EXAMPLES)
         message(WARNING "NCNN_STDIO or NCNN_STRING disabled, NCNN_BUILD_EXAMPLES will be turned off.")
         set(NCNN_BUILD_EXAMPLES OFF)
     endif()
+
     if(NCNN_BUILD_BENCHMARK)
         message(WARNING "NCNN_STDIO or NCNN_STRING disabled, NCNN_BUILD_BENCHMARK will be turned off.")
         set(NCNN_BUILD_BENCHMARK OFF)
     endif()
+
     if(NCNN_BUILD_TESTS)
         message(WARNING "NCNN_STDIO or NCNN_STRING disabled, NCNN_BUILD_TESTS will be turned off.")
         set(NCNN_BUILD_TESTS OFF)
     endif()
 endif()
 
-##############################################
-
+# #############################################
 if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
-    OR (APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-    OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
-    OR ((CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")) AND (${CMAKE_GENERATOR_PLATFORM} MATCHES "^(arm|arm64)")))
+    OR(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+    OR(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    OR((CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")) AND(${CMAKE_GENERATOR_PLATFORM} MATCHES "^(arm|arm64)")))
     set(NCNN_TARGET_ARCH arm)
 
-    if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")))
+    if(NOT(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")))
         include(CheckCXXCompilerFlag)
 
         set(CMAKE_REQUIRED_FLAGS "-mfpu=neon-vfpv4")
@@ -202,6 +222,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
 
     if(NCNN_COMPILER_SUPPORT_ARM82_FP16)
         option(NCNN_ARM82 "optimize aarch64 platform with armv8.2 fp16" ON)
+
         if(NCNN_COMPILER_SUPPORT_ARM82_DOTPROD)
             if(NCNN_ARM82)
                 option(NCNN_ARM82DOT "optimize aarch64 platform with armv8.2 dotprod" ON)
@@ -209,6 +230,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
         else()
             message(WARNING "The compiler does not support armv8.2 dotprod. NCNN_ARM82DOT will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_ARM82_FP16FML)
             if(NCNN_ARM82)
                 option(NCNN_ARM82FP16FML "optimize aarch64 platform with armv8.2 fp16fml" ON)
@@ -216,6 +238,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
         else()
             message(WARNING "The compiler does not support armv8.2 fp16fml. NCNN_ARM82FP16FML will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_ARM84_BF16)
             if(NCNN_ARM82DOT AND NCNN_ARM82FP16FML)
                 option(NCNN_ARM84BF16 "optimize aarch64 platform with armv8.4 bf16" ON)
@@ -223,6 +246,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
         else()
             message(WARNING "The compiler does not support armv8.4 bf16. NCNN_ARM86BF16 will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_ARM84_I8MM)
             if(NCNN_ARM82DOT AND NCNN_ARM82FP16FML)
                 option(NCNN_ARM84I8MM "optimize aarch64 platform with armv8.4 i8mm" ON)
@@ -230,9 +254,11 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
         else()
             message(WARNING "The compiler does not support armv8.4 i8mm. NCNN_ARM84I8MM will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_ARM86_SVE)
             if(NCNN_ARM84BF16 AND NCNN_ARM84I8MM)
                 option(NCNN_ARM86SVE "optimize aarch64 platform with armv8.6 sve" ON)
+
                 if(NCNN_COMPILER_SUPPORT_ARM86_SVE2)
                     if(NCNN_ARM86SVE)
                         option(NCNN_ARM86SVE2 "optimize aarch64 platform with armv8.6 sve2" ON)
@@ -240,6 +266,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
                 else()
                     message(WARNING "The compiler does not support armv8.6 sve2. NCNN_ARM86SVE2 will be OFF.")
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_ARM86_SVEBF16)
                     if(NCNN_ARM86SVE)
                         option(NCNN_ARM86SVEBF16 "optimize aarch64 platform with armv8.6 sve bf16" ON)
@@ -247,6 +274,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
                 else()
                     message(WARNING "The compiler does not support armv8.6 sve bf16. NCNN_ARM86SVEBF16 will be OFF.")
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_ARM86_SVEI8MM)
                     if(NCNN_ARM86SVE)
                         option(NCNN_ARM86SVEI8MM "optimize aarch64 platform with armv8.6 sve i8mm" ON)
@@ -254,6 +282,7 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm")
                 else()
                     message(WARNING "The compiler does not support armv8.6 sve i8mm. NCNN_ARM86SVEI8MM will be OFF.")
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_ARM86_SVEF32MM)
                     if(NCNN_ARM86SVE)
                         option(NCNN_ARM86SVEF32MM "optimize aarch64 platform with armv8.6 sve f32mm" ON)
@@ -285,6 +314,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(mips)")
     else()
         message(WARNING "The compiler does not support msa extension. NCNN_MSA will be OFF.")
     endif()
+
     if(NCNN_COMPILER_SUPPORT_LOONGSON_MMI)
         option(NCNN_MMI "optimize mips platform with loongson mmi extension" ON)
     else()
@@ -306,9 +336,11 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(riscv)")
     if(NCNN_COMPILER_SUPPORT_RVV)
         option(NCNN_RVV "optimize risc-v platform with v extension" ON)
         option(NCNN_RVV_CHECK_VFREDSUM "check compilter about support rvv-intrinsic" ON)
+
         if(NCNN_RVV_CHECK_VFREDSUM)
             include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ncnn_check_rvv_vfredusum.cmake)
         endif()
+
         if(NOT NCNN_COMPILER_SUPPORT_RVV_FP16)
             message(WARNING "The compiler does not support risc-v zfh extension. Upgrading your toolchain is strongly recommended.")
         endif()
@@ -325,7 +357,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(s390x)")
     set(NCNN_TARGET_ARCH s390x)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(sw_64)")
     set(NCNN_TARGET_ARCH sw_64)
-    #sw_64 is alpha-like platform
+
+    # sw_64 is alpha-like platform
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mieee")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mieee")
 else()
@@ -334,7 +367,8 @@ else()
     option(NCNN_SSE2 "optimize x86 platform with sse2 extension" ON)
 
     include(CheckCXXCompilerFlag)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
         check_cxx_compiler_flag("/arch:AVX" NCNN_COMPILER_SUPPORT_X86_AVX)
         check_cxx_compiler_flag("/arch:AVX" NCNN_COMPILER_SUPPORT_X86_FMA)
         check_cxx_compiler_flag("/arch:AVX" NCNN_COMPILER_SUPPORT_X86_XOP)
@@ -343,6 +377,7 @@ else()
         check_cxx_compiler_flag("/arch:AVX2" NCNN_COMPILER_SUPPORT_X86_AVX_VNNI)
         check_cxx_compiler_flag("/arch:AVX512" NCNN_COMPILER_SUPPORT_X86_AVX512)
         check_cxx_compiler_flag("/arch:AVX512" NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI)
+
         if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.16)
             # vs2017+ supports avx512 and vnni
             set(NCNN_COMPILER_SUPPORT_X86_AVX_VNNI OFF)
@@ -377,6 +412,7 @@ else()
 
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten" AND NCNN_COMPILER_SUPPORT_X86_AVX)
         option(NCNN_AVX "optimize x86 platform with avx extension" ON)
+
         if(NCNN_COMPILER_SUPPORT_X86_FMA)
             if(NCNN_AVX)
                 option(NCNN_FMA "optimize x86 platform with fma extension" ON)
@@ -384,6 +420,7 @@ else()
         else()
             message(WARNING "The compiler does not support fma extension. NCNN_FMA will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_X86_XOP)
             if(NCNN_AVX)
                 option(NCNN_XOP "optimize x86 platform with xop extension" ON)
@@ -391,6 +428,7 @@ else()
         else()
             message(WARNING "The compiler does not support xop extension. NCNN_XOP will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_X86_F16C)
             if(NCNN_AVX)
                 option(NCNN_F16C "optimize x86 platform with f16c extension" ON)
@@ -398,10 +436,12 @@ else()
         else()
             message(WARNING "The compiler does not support f16c extension. NCNN_F16C will be OFF.")
         endif()
+
         if(NCNN_COMPILER_SUPPORT_X86_AVX2)
             if(NCNN_AVX)
                 option(NCNN_AVX2 "optimize x86 platform with avx2 extension" ON)
             endif()
+
             if(NCNN_COMPILER_SUPPORT_X86_AVX_VNNI)
                 if(NCNN_AVX2)
                     option(NCNN_AVXVNNI "optimize x86 platform with avx vnni extension" ON)
@@ -409,10 +449,12 @@ else()
             else()
                 message(WARNING "The compiler does not support avx vnni extension. NCNN_AVXVNNI will be OFF.")
             endif()
+
             if(NCNN_COMPILER_SUPPORT_X86_AVX512)
                 if(NCNN_AVX2)
                     option(NCNN_AVX512 "optimize x86 platform with avx512 extension" ON)
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_X86_AVX512_VNNI)
                     if(NCNN_AVX512)
                         option(NCNN_AVX512VNNI "optimize x86 platform with avx512 vnni extension" ON)
@@ -420,6 +462,7 @@ else()
                 else()
                     message(WARNING "The compiler does not support avx512 vnni extension. NCNN_AVX512VNNI will be OFF.")
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_X86_AVX512_BF16)
                     if(NCNN_AVX512)
                         option(NCNN_AVX512BF16 "optimize x86 platform with avx512 bf16 extension" ON)
@@ -427,6 +470,7 @@ else()
                 else()
                     message(WARNING "The compiler does not support avx512 bf16 extension. NCNN_AVX512BF16 will be OFF.")
                 endif()
+
                 if(NCNN_COMPILER_SUPPORT_X86_AVX512_FP16)
                     if(NCNN_AVX512)
                         option(NCNN_AVX512FP16 "optimize x86 platform with avx512 fp16 extension" ON)
@@ -447,7 +491,7 @@ endif()
 
 message(STATUS "Target arch: ${NCNN_TARGET_ARCH}")
 
-##############################################
+# #############################################
 
 # set cmake default folder name
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -470,6 +514,7 @@ endif()
 if(NCNN_VULKAN)
     if(NCNN_SYSTEM_GLSLANG)
         set(GLSLANG_TARGET_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to glslangTargets.cmake directory")
+
         if(NOT GLSLANG_TARGET_DIR AND NOT DEFINED ENV{GLSLANG_TARGET_DIR})
             message(WARNING "GLSLANG_TARGET_DIR must be defined! NCNN_SYSTEM_GLSLANG will be turned off.")
             set(NCNN_SYSTEM_GLSLANG OFF)
@@ -480,14 +525,16 @@ if(NCNN_VULKAN)
 
             include("${GLSLANG_TARGET_DIR}/OSDependentTargets.cmake")
             include("${GLSLANG_TARGET_DIR}/OGLCompilerTargets.cmake")
+
             if(EXISTS "${GLSLANG_TARGET_DIR}/HLSLTargets.cmake")
                 # hlsl support can be optional
                 include("${GLSLANG_TARGET_DIR}/HLSLTargets.cmake")
             endif()
+
             include("${GLSLANG_TARGET_DIR}/glslangTargets.cmake")
             include("${GLSLANG_TARGET_DIR}/SPIRVTargets.cmake")
 
-            if (NOT TARGET glslang OR NOT TARGET SPIRV)
+            if(NOT TARGET glslang OR NOT TARGET SPIRV)
                 message(WARNING "glslang or SPIRV target not found! NCNN_SYSTEM_GLSLANG will be turned off.")
                 set(NCNN_SYSTEM_GLSLANG OFF)
             endif()
@@ -510,17 +557,21 @@ if(NCNN_VULKAN)
             option(ENABLE_OPT "" OFF)
             option(ENABLE_PCH "" OFF)
             option(ENABLE_CTEST "" OFF)
+
             if(NCNN_SHARED_LIB)
                 option(SKIP_GLSLANG_INSTALL "" ON)
             endif()
+
             add_subdirectory(glslang)
+
             if(NCNN_SHARED_LIB)
-                if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+                if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
                     target_compile_options(glslang PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
                     target_compile_options(OGLCompiler PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
                     target_compile_options(OSDependent PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
                     target_compile_options(SPIRV PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
                 endif()
+
                 if(NCNN_ENABLE_LTO)
                     set_target_properties(glslang PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
                     set_target_properties(OGLCompiler PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
@@ -533,19 +584,24 @@ if(NCNN_VULKAN)
 endif()
 
 add_subdirectory(src)
+
 if(NCNN_BUILD_BENCHMARK)
     add_subdirectory(benchmark)
 endif()
+
 if(NCNN_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
 if(NCNN_BUILD_TOOLS)
     add_subdirectory(tools)
 endif()
+
 if(NCNN_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
 if(NCNN_PYTHON)
     add_subdirectory(python)
 endif()

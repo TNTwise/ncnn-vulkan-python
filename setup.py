@@ -46,8 +46,7 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(
-            self.get_ext_fullpath(ext.name)))
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "ncnn_vulkan")
 
         # required for auto-detection of auxiliary "native" libs
@@ -75,12 +74,14 @@ class CMakeBuild(build_ext):
             "-DNCNN_BUILD_TOOLS=OFF",
             "-DNCNN_VULKAN=ON",
         ]
+        if os.environ.get("CMAKE_ARGS", None) is not None:
+            cmake_args = cmake_args + os.environ["CMAKE_ARGS"].split(",")
+
         build_args = []
 
         if self.compiler.compiler_type == "msvc":
             # Single config generators are handled "normally"
-            single_config = any(
-                x in cmake_generator for x in {"NMake", "Ninja"})
+            single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
 
             # CMake allows an arch-in-generator style for backward compatibility
             contains_arch = any(x in cmake_generator for x in {"ARM", "Win64"})
@@ -94,8 +95,7 @@ class CMakeBuild(build_ext):
             # Multi-config generators have a different way to specify configs
             if not single_config:
                 cmake_args += [
-                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(
-                        cfg.upper(), extdir)
+                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
                 ]
                 build_args += ["--config", cfg]
 
@@ -119,6 +119,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
+        # subprocess.check_call(["cp", "-a", "prebuild", self.build_temp])
 
 
 if sys.version_info < (3, 0):
