@@ -89,7 +89,7 @@ class CMakeBuild(build_ext):
         ]
         if os.environ.get("CMAKE_ARGS", None) is not None:
             cmake_args = cmake_args + os.environ["CMAKE_ARGS"].split(",")
-        raise RuntimeError(cmake_args)
+        # raise RuntimeError(cmake_args)
         print(cmake_args)
 
         build_args = []
