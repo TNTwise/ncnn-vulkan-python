@@ -40,70 +40,65 @@ jobs:
           draft: true
           prerelease: false
 
-  # windows:
-  #   strategy:
-  #     matrix:
-  #       python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10']
+  windows:
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
 
-  #   needs: [setup, create-release]
+    needs: [setup, create-release]
 
-  #   runs-on: windows-latest
-  #   env:
-  #     PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-windows
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         submodules: recursive
-  #     - uses: ilammy/msvc-dev-cmd@v1
-  #     - name: cache-vulkansdk
-  #       id: cache-vulkansdk
-  #       uses: actions/cache@v1
-  #       with:
-  #         path: "VulkanSDK"
-  #         key: VulkanSDK-1.2.162.0-Installer
-  #     - name: vulkansdk
-  #       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
-  #       run: |
-  #         Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.162.0/windows/VulkanSDK-1.2.162.0-Installer.exe?Human=true -OutFile VulkanSDK-1.2.162.0-Installer.exe
-  #         7z x -aoa ./VulkanSDK-1.2.162.0-Installer.exe -oVulkanSDK
-  #         Remove-Item .\VulkanSDK\Demos, .\VulkanSDK\Samples, .\VulkanSDK\Third-Party, .\VulkanSDK\Tools, .\VulkanSDK\Tools32, .\VulkanSDK\Bin32, .\VulkanSDK\Lib32 -Recurse
-  #     - uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         architecture: x64
-  #     - name: Check Python version
-  #       run: |
-  #         python --version
-  #     - name: Install dependencies
-  #       run: |
-  #         pip install build twine
-  #     - name: Build
-  #       run: |
-  #         $env:VULKAN_SDK="$(pwd)\VulkanSDK"
-  #         $env:CMAKE_FLAGS="-DPY_VERSION=${{ matrix.python-version }}"
-  #         mkdir -p build
-  #         cd build
-  #         cmake -DCMAKE_BUILD_TYPE=Release -DNCNN_VULKAN=ON -DNCNN_SYSTEM_GLSLANG=ON -DNCNN_BUILD_EXAMPLES=ON ..
-  #         make
-  #         make install
-  #         cd ..
-  #         python -m build -w .
-  #     - name: Package
-  #       run: |
-  #         mkdir ${{ env.PACKAGENAME }}
-  #         Copy-Item -Verbose -Path "README.md" -Destination "${{ env.PACKAGENAME }}"
-  #         Copy-Item -Verbose -Path "LICENSE.txt" -Destination "${{ env.PACKAGENAME }}"
-  #         Copy-Item -Verbose -Recurse -Path dist\* -Destination "${{ env.PACKAGENAME }}"
-  #         7z a -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
-  #     - name: Upload
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-  #         asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-  #         asset_content_type: application/zip
+    runs-on: windows-latest
+    env:
+      PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-windows
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: cache-vulkansdk
+        id: cache-vulkansdk
+        uses: actions/cache@v1
+        with:
+          path: "VulkanSDK"
+          key: VulkanSDK-1.2.162.0-Installer
+      - name: vulkansdk
+        if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
+        run: |
+          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.162.0/windows/VulkanSDK-1.2.162.0-Installer.exe?Human=true -OutFile VulkanSDK-1.2.162.0-Installer.exe
+          7z x -aoa ./VulkanSDK-1.2.162.0-Installer.exe -oVulkanSDK
+          Remove-Item .\VulkanSDK\Demos, .\VulkanSDK\Samples, .\VulkanSDK\Third-Party, .\VulkanSDK\Tools, .\VulkanSDK\Tools32, .\VulkanSDK\Bin32, .\VulkanSDK\Lib32 -Recurse
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Check Python version
+        run: |
+          python --version
+      - name: Install dependencies
+        run: |
+          pip install build twine
+      - name: Build
+        run: |
+          $env:VULKAN_SDK="$(pwd)\VulkanSDK"
+          $env:CMAKE_FLAGS="-DPY_VERSION=${{ matrix.python-version }}"
+          $env:CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release,-DNCNN_VULKAN=ON,-DNCNN_SYSTEM_GLSLANG=ON,-DNCNN_BUILD_EXAMPLES=ON"
+          python -m build -w .
+      - name: Package
+        run: |
+          mkdir ${{ env.PACKAGENAME }}
+          Copy-Item -Verbose -Path "README.md" -Destination "${{ env.PACKAGENAME }}"
+          Copy-Item -Verbose -Path "LICENSE.txt" -Destination "${{ env.PACKAGENAME }}"
+          Copy-Item -Verbose -Recurse -Path dist\* -Destination "${{ env.PACKAGENAME }}"
+          7z a -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
+      - name: Upload
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_content_type: application/zip
   #     - name: Upload to PyPI
   #       run: |
   #         python3 -m twine upload dist/*
@@ -112,45 +107,58 @@ jobs:
   #         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
   #         TWINE_REPOSITORY: pypi
 
-  # linux:
-  #   strategy:
-  #     matrix:
-  #       python-version: ['3.8']
-  #   needs: [setup, create-release]
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
-  #     DEBIAN_FRONTEND: noninteractive
-  #   steps:
-  #     - uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         architecture: x64
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         submodules: recursive
-  #     - name: Build manylinux Python wheels
-  #       uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
-  #       with:
-  #         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
-  #         build-requirements: 'cython numpy setuptools wheel ninja cmake build twine'
-  #         system-packages: 'vulkan-devel patchelf'
-  #         pre-build-command: 'sh prepare_actions.sh'
-  #     - name: Package
-  #       run: |
-  #         mkdir -p ${{ env.PACKAGENAME }}
-  #         cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
-  #         cp -r dist/* ${{ env.PACKAGENAME }}
-  #         zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
-  #     - name: Upload
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
-  #         asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-  #         asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-  #         asset_content_type: application/zip
+  linux:
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    needs: [setup, create-release]
+    runs-on: ubuntu-latest
+    env:
+      PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: cache-vulkansdk
+        id: cache-vulkansdk
+        uses: actions/cache@v3
+        with:
+          path: "1.2.189.0"
+          key: vulkansdk-linux-x86_64-1.2.189.0
+      - name: vulkansdk
+        if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
+        run: |
+          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/linux/vulkansdk-linux-x86_64-1.2.189.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.2.189.0.tar.gz
+          tar -xf vulkansdk-linux-x86_64-1.2.189.0.tar.gz
+          rm -rf 1.2.189.0/source 1.2.189.0/samples
+          find 1.2.189.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
+      - name: Build manylinux Python wheels
+        uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
+        with:
+          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310"
+          build-requirements: "cython numpy setuptools wheel ninja cmake build twine"
+          system-packages: "vulkan-devel patchelf"
+          pre-build-command: "sh prepare_actions.sh"
+      - name: Package
+        run: |
+          mkdir -p ${{ env.PACKAGENAME }}
+          cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
+          cp -r dist/* ${{ env.PACKAGENAME }}
+          zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
+      - name: Upload
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_content_type: application/zip
   #     - name: Install twine
   #       run: |
   #         pip install twine
@@ -161,6 +169,104 @@ jobs:
   #         TWINE_USERNAME: __token__
   #         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
   #         TWINE_REPOSITORY: pypi
+
+  macos-x64:
+    needs: [setup, create-release]
+    strategy:
+      matrix:
+        python-version:
+          [
+            "cp36-macosx_x86_64",
+            "cp37-macosx_x86_64",
+            "cp38-macosx_x86_64",
+            "cp39-macosx_x86_64",
+            "cp310-macosx_x86_64",
+          ]
+    env:
+      PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
+      CIBW_ARCHS: x86_64
+      CIBW_BUILD: ${{ matrix.python-version }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: cache-vulkansdk
+        id: cache-vulkansdk
+        uses: actions/cache@v1
+        with:
+          path: "vulkansdk-macos-1.2.189.0"
+          key: vulkansdk-macos-1.2.189.0
+      - name: vulkansdk
+        if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
+        run: |
+          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/mac/vulkansdk-macos-1.2.189.0.dmg?Human=true -O vulkansdk-macos-1.2.189.0.dmg
+          hdiutil attach vulkansdk-macos-1.2.189.0.dmg
+          sudo /Volumes/vulkansdk-macos-1.2.189.0/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0 --accept-licenses --default-answer --confirm-command install
+          hdiutil detach /Volumes/vulkansdk-macos-1.2.189.0
+      - name: cache-openmp
+        id: cache-openmp
+        uses: actions/cache@v3
+        with:
+          path: openmp-install
+          key: openmp-macos-install-20201213
+      - name: openmp
+        if: steps.cache-openmp.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/openmp-11.0.0.src.tar.xz
+          tar -xf openmp-11.0.0.src.tar.xz
+          cd openmp-11.0.0.src
+          sed -i'' -e '/.size __kmp_unnamed_critical_addr/d' runtime/src/z_Linux_asm.S
+          sed -i'' -e 's/__kmp_unnamed_critical_addr/___kmp_unnamed_critical_addr/g' runtime/src/z_Linux_asm.S
+          mkdir -p build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+              -DLIBOMP_ENABLE_SHARED=OFF -DLIBOMP_OMPT_SUPPORT=OFF -DLIBOMP_USE_HWLOC=OFF ..
+          cmake --build . -j 3
+          cmake --build . --target install
+          mkdir $GITHUB_WORKSPACE/openmp-install
+          cp -r install/* $GITHUB_WORKSPACE/openmp-install
+      - name: install-openmp
+        run: |
+          sudo cp $GITHUB_WORKSPACE/openmp-install/include/* $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
+          sudo cp $GITHUB_WORKSPACE/openmp-install/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          architecture: x64
+      - name: Check Python version
+        run: |
+          python --version
+      - name: Install dependencies
+        run: |
+          pip install build twine cibuildwheel
+      - name: Build
+        run: |
+          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+          export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
+          export CMAKE_ARGS="-DCMAKE_SYSTEM_PROCESSOR=x86_64,-DCMAKE_OSX_ARCHITECTURES=x86_64,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
+          python -m cibuildwheel --output-dir dist
+      - name: Package
+        run: |
+          mkdir -p ${{ env.PACKAGENAME }}
+          cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
+          cp -r dist/* ${{ env.PACKAGENAME }}
+          zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
+      - name: Upload
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_content_type: application/zip
+      # - name: Upload to PyPI
+      #   run: |
+      #     python3 -m twine upload dist/*
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      #     TWINE_REPOSITORY: pypi
 
   macos-arm64:
     needs: [setup, create-release]
@@ -231,34 +337,22 @@ jobs:
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          # mkdir prebuild && cd prebuild
-          # cmake -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 -DNCNN_TARGET_ARCH=arm \
-          #   -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
-          #   -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
-          #   -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-          #   -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include \
-          #   -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
-          #   -DNCNN_VULKAN=ON -DNCNN_BUILD_TOOLS=OFF -DNCNN_BUILD_EXAMPLES=OFF ..
-          # cmake --build . -j 3
-          # cd ..
           export CMAKE_ARGS="-DCMAKE_CROSSCOMPILING=ON,-DCMAKE_SYSTEM_PROCESSOR=arm64,-DCMAKE_OSX_ARCHITECTURES=arm64,-DNCNN_TARGET_ARCH=arm,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
-          # brew install rename
-          # rename -v 's/x86_64/arm64/' dist/*
       - name: Package
         run: |
           mkdir -p ${{ env.PACKAGENAME }}
           cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
           cp -r dist/* ${{ env.PACKAGENAME }}
-          zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}-arm64.zip ${{ env.PACKAGENAME }}
+          zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
       - name: Upload
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}-arm64.zip
-          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}-arm64.zip
+          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_content_type: application/zip
       # - name: Upload to PyPI
       #   run: |

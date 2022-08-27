@@ -53,17 +53,15 @@ endif()
 
 project(ncnn)
 
-find_package(OpenMP REQUIRED)
-link_libraries(OpenMP::OpenMP_CXX)
+if(APPLE)
+    find_package(OpenMP REQUIRED)
+    link_libraries(OpenMP::OpenMP_CXX)
+endif()
 
-set(OpenMP_C_FLAGS "-Xclang -fopenmp")
-set(OpenMP_CXX_FLAGS "-Xclang -fopenmp")
-set(OpenMP_C_LIB_NAMES "libomp")
-set(OpenMP_CXX_LIB_NAMES "libomp")
-set(OpenMP_libomp_LIBRARY "/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a")
-
-find_package(Vulkan REQUIRED)
-link_libraries(Vulkan::Vulkan)
+if(NCNN_VULKAN)
+    find_package(Vulkan REQUIRED)
+    link_libraries(Vulkan::Vulkan)
+endif()
 
 if(MSVC AND NOT CMAKE_VERSION VERSION_LESS "3.15")
     option(NCNN_BUILD_WITH_STATIC_CRT "Enables use of statically linked CRT for statically linked ncnn" OFF)

@@ -59,8 +59,6 @@ class CMakeBuild(build_ext):
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
-        print(os.environ["CMAKE_ARGS"].split(","))
-
         # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
         # EXAMPLE_VERSION_INFO shows you how to pass a value into the C++ code
         # from Python.
@@ -75,22 +73,9 @@ class CMakeBuild(build_ext):
             "-DNCNN_BUILD_EXAMPLES=OFF",
             "-DNCNN_BUILD_TOOLS=OFF",
             "-DNCNN_VULKAN=ON",
-            # "-DOpenMP_C_FLAGS=-Xclang -fopenmp",
-            # "-DOpenMP_CXX_FLAGS=-Xclang -fopenmp",
-            # "-DOpenMP_C_LIB_NAMES=libomp",
-            # "-DOpenMP_CXX_LIB_NAMES=libomp",
-            # "-DOpenMP_libomp_LIBRARY=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a",
-            # "-DCMAKE_CROSSCOMPILING=ON",
-            # "-DCMAKE_SYSTEM_PROCESSOR=arm64",
-            # "-DCMAKE_OSX_ARCHITECTURES=arm64",
-            # "-DNCNN_TARGET_ARCH=arm",
-            # f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include",
-            # f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
         ]
         if os.environ.get("CMAKE_ARGS", None) is not None:
             cmake_args = cmake_args + os.environ["CMAKE_ARGS"].split(",")
-        # raise RuntimeError(cmake_args)
-        print(cmake_args)
 
         build_args = []
 
