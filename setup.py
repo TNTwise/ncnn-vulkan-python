@@ -86,7 +86,10 @@ class CMakeBuild(build_ext):
             # "-DNCNN_TARGET_ARCH=arm",
             # f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include",
             # f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
-        ] + os.environ["CMAKE_ARGS"].split(",")
+        ]
+        if os.environ.get("CMAKE_ARGS", None) is not None:
+            cmake_args = cmake_args + os.environ["CMAKE_ARGS"].split(",")
+        raise RuntimeError(cmake_args)
         print(cmake_args)
 
         build_args = []
