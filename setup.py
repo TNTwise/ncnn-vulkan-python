@@ -73,18 +73,20 @@ class CMakeBuild(build_ext):
             "-DNCNN_BUILD_EXAMPLES=OFF",
             "-DNCNN_BUILD_TOOLS=OFF",
             "-DNCNN_VULKAN=ON",
-            "-DOpenMP_C_FLAGS=-Xclang -fopenmp",
-            "-DOpenMP_CXX_FLAGS=-Xclang -fopenmp",
-            "-DOpenMP_C_LIB_NAMES=libomp",
-            "-DOpenMP_CXX_LIB_NAMES=libomp",
-            "-DOpenMP_libomp_LIBRARY=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a",
-            "-DCMAKE_CROSSCOMPILING=ON",
-            "-DCMAKE_SYSTEM_PROCESSOR=arm64",
-            "-DCMAKE_OSX_ARCHITECTURES=arm64",
-            "-DNCNN_TARGET_ARCH=arm",
-            f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include",
-            f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
-        ]
+            # "-DOpenMP_C_FLAGS=-Xclang -fopenmp",
+            # "-DOpenMP_CXX_FLAGS=-Xclang -fopenmp",
+            # "-DOpenMP_C_LIB_NAMES=libomp",
+            # "-DOpenMP_CXX_LIB_NAMES=libomp",
+            # "-DOpenMP_libomp_LIBRARY=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a",
+            # "-DCMAKE_CROSSCOMPILING=ON",
+            # "-DCMAKE_SYSTEM_PROCESSOR=arm64",
+            # "-DCMAKE_OSX_ARCHITECTURES=arm64",
+            # "-DNCNN_TARGET_ARCH=arm",
+            # f"-DVulkan_INCLUDE_DIR={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/include",
+            # f"-DVulkan_LIBRARY={os.environ['GITHUB_WORKSPACE']}/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib",
+        ] + os.environ["CMAKE_ARGS"].split(",")
+        print(cmake_args)
+
         build_args = []
 
         if self.compiler.compiler_type == "msvc":
