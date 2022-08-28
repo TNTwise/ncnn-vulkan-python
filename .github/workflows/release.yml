@@ -243,7 +243,7 @@ jobs:
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          export CMAKE_ARGS="-DCMAKE_SYSTEM_PROCESSOR=x86_64,-DCMAKE_OSX_ARCHITECTURES=x86_64,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
+          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_SYSTEM_PROCESSOR=x86_64,-DCMAKE_OSX_ARCHITECTURES=x86_64,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
       - name: Package
         run: |
@@ -337,7 +337,7 @@ jobs:
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          export CMAKE_ARGS="-DCMAKE_CROSSCOMPILING=ON,-DCMAKE_SYSTEM_PROCESSOR=arm64,-DCMAKE_OSX_ARCHITECTURES=arm64,-DNCNN_TARGET_ARCH=arm,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
+          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_CROSSCOMPILING=ON,-DCMAKE_SYSTEM_PROCESSOR=arm64,-DCMAKE_OSX_ARCHITECTURES=arm64,-DNCNN_TARGET_ARCH=arm,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
       - name: Package
         run: |
