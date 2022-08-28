@@ -58,9 +58,9 @@ if(APPLE)
     find_package(OpenMP REQUIRED COMPONENTS CXX)
     link_libraries(OpenMP::OpenMP_CXX)
 
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(OpenMP_CXX_LIBRARIES)
-    endif()
+    # if(OpenMP_CXX_FOUND)
+    # target_link_libraries(OpenMP_CXX_LIBRARIES)
+    # endif()
 endif()
 
 if(NCNN_VULKAN)
