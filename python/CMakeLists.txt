@@ -21,7 +21,11 @@ endif("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
 if(APPLE)
     find_package(OpenMP REQUIRED)
     link_libraries(OpenMP::OpenMP_CXX)
-    target_link_libraries(OpenMP_CXX_LIBRARIES)
+
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(pyncnn PUBLIC OpenMP::OpenMP_CXX)
+        target_link_options(pyncnn PUBLIC ${OpenMP_CXX_FLAGS})
+    endif()
 endif()
 
 if(NCNN_VULKAN)
