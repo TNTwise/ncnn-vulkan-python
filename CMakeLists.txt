@@ -61,6 +61,10 @@ endif()
 if(NCNN_VULKAN)
     find_package(Vulkan REQUIRED)
     link_libraries(Vulkan::Vulkan)
+
+    if(APPLE)
+        link_libraries(Vulkan::MoltenVK)
+    endif()
 endif()
 
 if(MSVC AND NOT CMAKE_VERSION VERSION_LESS "3.15")

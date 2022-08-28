@@ -5,8 +5,8 @@ project(pyncnn)
 set(PACKAGE_VERSION ${NCNN_VERSION_STRING})
 add_definitions(-DVERSION_INFO="${PACKAGE_VERSION}")
 
-set( CMAKE_CXX_STANDARD 11 )
-set( CMAKE_CXX_STANDARD_REQUIRED ON )
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(pybind11)
 
@@ -17,15 +17,30 @@ if("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
     endif(MSVC OR CMAKE_GENERATOR STREQUAL "Xcode")
 endif("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
 
+if(APPLE)
+    find_package(OpenMP REQUIRED)
+    link_libraries(OpenMP::OpenMP_CXX)
+endif()
+
+if(NCNN_VULKAN)
+    find_package(Vulkan REQUIRED)
+    link_libraries(Vulkan::Vulkan)
+
+    if(APPLE)
+        link_libraries(Vulkan::MoltenVK)
+    endif()
+endif()
+
 include_directories(${pybind11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 pybind11_add_module(pyncnn src/main.cpp)
 set_target_properties(pyncnn PROPERTIES OUTPUT_NAME "ncnn")
 target_link_libraries(pyncnn PUBLIC ncnn)
 set_target_properties(pyncnn PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ncnn")
 set_property(TARGET pyncnn PROPERTY FOLDER "python")
+
 if("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
-    add_custom_command(TARGET pyncnn POST_BUILD 
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/ncnn/ncnn${PYTHON_MODULE_PREFIX}${PYTHON_MODULE_EXTENSION} 
+    add_custom_command(TARGET pyncnn POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/ncnn/ncnn${PYTHON_MODULE_PREFIX}${PYTHON_MODULE_EXTENSION}
         ${PROJECT_SOURCE_DIR}/ncnn/ncnn${PYTHON_MODULE_PREFIX}${PYTHON_MODULE_EXTENSION})
 endif("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
 
