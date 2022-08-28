@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 project(pyncnn)
 
@@ -20,6 +21,7 @@ endif("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
 if(APPLE)
     find_package(OpenMP REQUIRED)
     link_libraries(OpenMP::OpenMP_CXX)
+    target_link_libraries(OpenMP_CXX_LIBRARIES)
 endif()
 
 if(NCNN_VULKAN)
@@ -27,9 +29,12 @@ if(NCNN_VULKAN)
         find_package(Vulkan REQUIRED COMPONENTS MoltenVK)
         link_libraries(Vulkan::Vulkan)
         link_libraries(Vulkan::MoltenVK)
+        target_link_libraries(Vulkan_LIBRARIES)
+        target_link_libraries(Vulkan_MoltenVK_LIBRARY)
     else()
         find_package(Vulkan REQUIRED)
         link_libraries(Vulkan::Vulkan)
+        target_link_libraries(Vulkan_LIBRARIES)
     endif()
 endif()
 
