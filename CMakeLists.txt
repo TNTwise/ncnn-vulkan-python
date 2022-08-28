@@ -59,8 +59,8 @@ if(APPLE)
     link_libraries(OpenMP::OpenMP_CXX)
 
     if(OpenMP_CXX_FOUND)
-        target_link_libraries(pyncnn PUBLIC OpenMP::OpenMP_CXX)
-        target_link_options(pyncnn PUBLIC ${OpenMP_CXX_FLAGS})
+        target_link_libraries(ncnn PUBLIC OpenMP::OpenMP_CXX)
+        target_link_options(ncnn PUBLIC ${OpenMP_CXX_FLAGS})
     endif()
 endif()
 
