@@ -23,11 +23,13 @@ if(APPLE)
 endif()
 
 if(NCNN_VULKAN)
-    find_package(Vulkan REQUIRED)
-    link_libraries(Vulkan::Vulkan)
-
     if(APPLE)
+        find_package(Vulkan REQUIRED COMPONENTS MoltenVK)
+        link_libraries(Vulkan::Vulkan)
         link_libraries(Vulkan::MoltenVK)
+    else()
+        find_package(Vulkan REQUIRED)
+        link_libraries(Vulkan::Vulkan)
     endif()
 endif()
 
