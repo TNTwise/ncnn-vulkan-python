@@ -243,9 +243,6 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: "3.24.1"
-      - name: Get MoltenVK
-        run: |
-          brew install molten-vk
       - name: Build
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
@@ -344,9 +341,6 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: "3.24.1"
-      - name: Get MoltenVK
-        run: |
-          brew install molten-vk
       - name: Build
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
