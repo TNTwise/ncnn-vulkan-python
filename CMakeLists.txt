@@ -55,7 +55,7 @@ endif()
 project(ncnn)
 
 if(APPLE)
-    find_package(OpenMP REQUIRED)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
     link_libraries(OpenMP::OpenMP_CXX)
 
     if(OpenMP_CXX_FOUND)
