@@ -40,72 +40,72 @@ jobs:
           draft: true
           prerelease: false
 
-  windows:
-    strategy:
-      matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+  # windows:
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
 
-    needs: [setup, create-release]
+  #   needs: [setup, create-release]
 
-    runs-on: windows-latest
-    env:
-      PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-windows
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - uses: ilammy/msvc-dev-cmd@v1
-      - name: cache-vulkansdk
-        id: cache-vulkansdk
-        uses: actions/cache@v1
-        with:
-          path: "VulkanSDK"
-          key: VulkanSDK-1.2.162.0-Installer
-      - name: vulkansdk
-        if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
-        run: |
-          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.162.0/windows/VulkanSDK-1.2.162.0-Installer.exe?Human=true -OutFile VulkanSDK-1.2.162.0-Installer.exe
-          7z x -aoa ./VulkanSDK-1.2.162.0-Installer.exe -oVulkanSDK
-          Remove-Item .\VulkanSDK\Demos, .\VulkanSDK\Samples, .\VulkanSDK\Third-Party, .\VulkanSDK\Tools, .\VulkanSDK\Tools32, .\VulkanSDK\Bin32, .\VulkanSDK\Lib32 -Recurse
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - name: Check Python version
-        run: |
-          python --version
-      - name: Install dependencies
-        run: |
-          pip install build twine
-      - name: Build
-        run: |
-          $env:VULKAN_SDK="$(pwd)\VulkanSDK"
-          $env:CMAKE_FLAGS="-DPY_VERSION=${{ matrix.python-version }}"
-          $env:CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release,-DNCNN_VULKAN=ON,-DNCNN_SYSTEM_GLSLANG=ON,-DNCNN_BUILD_EXAMPLES=ON"
-          python -m build -w .
-      - name: Package
-        run: |
-          mkdir ${{ env.PACKAGENAME }}
-          Copy-Item -Verbose -Path "README.md" -Destination "${{ env.PACKAGENAME }}"
-          Copy-Item -Verbose -Path "LICENSE.txt" -Destination "${{ env.PACKAGENAME }}"
-          Copy-Item -Verbose -Recurse -Path dist\* -Destination "${{ env.PACKAGENAME }}"
-          7z a -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
-      - name: Upload
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-          asset_content_type: application/zip
-      # - name: Upload to PyPI
-      #   run: |
-      #     python3 -m twine upload dist/*
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      #     TWINE_REPOSITORY: pypi
+  #   runs-on: windows-latest
+  #   env:
+  #     PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-windows
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #     - uses: ilammy/msvc-dev-cmd@v1
+  #     - name: cache-vulkansdk
+  #       id: cache-vulkansdk
+  #       uses: actions/cache@v1
+  #       with:
+  #         path: "VulkanSDK"
+  #         key: VulkanSDK-1.2.162.0-Installer
+  #     - name: vulkansdk
+  #       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
+  #       run: |
+  #         Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.162.0/windows/VulkanSDK-1.2.162.0-Installer.exe?Human=true -OutFile VulkanSDK-1.2.162.0-Installer.exe
+  #         7z x -aoa ./VulkanSDK-1.2.162.0-Installer.exe -oVulkanSDK
+  #         Remove-Item .\VulkanSDK\Demos, .\VulkanSDK\Samples, .\VulkanSDK\Third-Party, .\VulkanSDK\Tools, .\VulkanSDK\Tools32, .\VulkanSDK\Bin32, .\VulkanSDK\Lib32 -Recurse
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #         architecture: x64
+  #     - name: Check Python version
+  #       run: |
+  #         python --version
+  #     - name: Install dependencies
+  #       run: |
+  #         pip install build twine
+  #     - name: Build
+  #       run: |
+  #         $env:VULKAN_SDK="$(pwd)\VulkanSDK"
+  #         $env:CMAKE_FLAGS="-DPY_VERSION=${{ matrix.python-version }}"
+  #         $env:CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release,-DNCNN_VULKAN=ON,-DNCNN_SYSTEM_GLSLANG=ON,-DNCNN_BUILD_EXAMPLES=ON"
+  #         python -m build -w .
+  #     - name: Package
+  #       run: |
+  #         mkdir ${{ env.PACKAGENAME }}
+  #         Copy-Item -Verbose -Path "README.md" -Destination "${{ env.PACKAGENAME }}"
+  #         Copy-Item -Verbose -Path "LICENSE.txt" -Destination "${{ env.PACKAGENAME }}"
+  #         Copy-Item -Verbose -Recurse -Path dist\* -Destination "${{ env.PACKAGENAME }}"
+  #         7z a -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
+  #     - name: Upload
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #         asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+  #         asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+  #         asset_content_type: application/zip
+  #     # - name: Upload to PyPI
+  #     #   run: |
+  #     #     python3 -m twine upload dist/*
+  #     #   env:
+  #     #     TWINE_USERNAME: __token__
+  #     #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+  #     #     TWINE_REPOSITORY: pypi
 
   # linux:
   #   strategy:
@@ -191,6 +191,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.12
+        with:
+          cmake-version: "3.24.1"
+      - name: Get MoltenVK
+        run: |
+          brew install molten-vk
       - name: cache-vulkansdk
         id: cache-vulkansdk
         uses: actions/cache@v1
@@ -283,6 +290,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.12
+        with:
+          cmake-version: "3.24.1"
+      - name: Get MoltenVK
+        run: |
+          brew install molten-vk
       - name: cache-vulkansdk
         id: cache-vulkansdk
         uses: actions/cache@v1
