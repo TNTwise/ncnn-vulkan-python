@@ -107,68 +107,68 @@ jobs:
       #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       #     TWINE_REPOSITORY: pypi
 
-  linux:
-    strategy:
-      matrix:
-        python-version: ["3.8"]
-    needs: [setup, create-release]
-    runs-on: ubuntu-latest
-    env:
-      PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
-      DEBIAN_FRONTEND: noninteractive
-    steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: cache-vulkansdk
-        id: cache-vulkansdk
-        uses: actions/cache@v3
-        with:
-          path: "1.2.189.0"
-          key: vulkansdk-linux-x86_64-1.2.189.0
-      - name: vulkansdk
-        if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
-        run: |
-          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/linux/vulkansdk-linux-x86_64-1.2.189.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.2.189.0.tar.gz
-          tar -xf vulkansdk-linux-x86_64-1.2.189.0.tar.gz
-          rm -rf 1.2.189.0/source 1.2.189.0/samples
-          find 1.2.189.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
-      - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
-        with:
-          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310"
-          build-requirements: "cython numpy setuptools wheel ninja cmake build twine"
-          system-packages: "vulkan-devel patchelf"
-          pre-build-command: "sh prepare_actions.sh"
-      - name: Package
-        run: |
-          mkdir -p ${{ env.PACKAGENAME }}
-          cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
-          cp -r dist/* ${{ env.PACKAGENAME }}
-          zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
-      - name: Upload
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-          asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
-          asset_content_type: application/zip
-      - name: Install twine
-        run: |
-          pip install twine
-      # - name: Upload to PyPI
-      #   run: |
-      #     python3 -m twine upload dist/*manylinux2014_x86_64.whl
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      #     TWINE_REPOSITORY: pypi
+  # linux:
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.8"]
+  #   needs: [setup, create-release]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
+  #     DEBIAN_FRONTEND: noninteractive
+  #   steps:
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #         architecture: x64
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #     - name: cache-vulkansdk
+  #       id: cache-vulkansdk
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: "1.2.189.0"
+  #         key: vulkansdk-linux-x86_64-1.2.189.0
+  #     - name: vulkansdk
+  #       if: steps.cache-vulkansdk.outputs.cache-hit != 'true'
+  #       run: |
+  #         wget https://sdk.lunarg.com/sdk/download/1.2.189.0/linux/vulkansdk-linux-x86_64-1.2.189.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.2.189.0.tar.gz
+  #         tar -xf vulkansdk-linux-x86_64-1.2.189.0.tar.gz
+  #         rm -rf 1.2.189.0/source 1.2.189.0/samples
+  #         find 1.2.189.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
+  #     - name: Build manylinux Python wheels
+  #       uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
+  #       with:
+  #         python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310"
+  #         build-requirements: "cython numpy setuptools wheel ninja cmake build twine"
+  #         system-packages: "vulkan-devel patchelf"
+  #         pre-build-command: "sh prepare_actions.sh"
+  #     - name: Package
+  #       run: |
+  #         mkdir -p ${{ env.PACKAGENAME }}
+  #         cp README.md LICENSE.txt ${{ env.PACKAGENAME }}
+  #         cp -r dist/* ${{ env.PACKAGENAME }}
+  #         zip -9 -r ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip ${{ env.PACKAGENAME }}
+  #     - name: Upload
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #         asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+  #         asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
+  #         asset_content_type: application/zip
+  #     - name: Install twine
+  #       run: |
+  #         pip install twine
+  #     # - name: Upload to PyPI
+  #     #   run: |
+  #     #     python3 -m twine upload dist/*manylinux2014_x86_64.whl
+  #     #   env:
+  #     #     TWINE_USERNAME: __token__
+  #     #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+  #     #     TWINE_REPOSITORY: pypi
 
   macos-x64:
     needs: [setup, create-release]
