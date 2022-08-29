@@ -176,12 +176,15 @@ jobs:
       matrix:
         python-version:
           [
-            "cp36-macosx_x86_64",
-            "cp37-macosx_x86_64",
-            "cp38-macosx_x86_64",
-            "cp39-macosx_x86_64",
-            "cp310-macosx_x86_64",
+            "cp36-macosx_x86_64 cp37-macosx_x86_64 cp38-macosx_x86_64 cp39-macosx_x86_64 cp310-macosx_x86_64",
           ]
+          #  [
+          #   "cp36-macosx_x86_64",
+          #   "cp37-macosx_x86_64",
+          #   "cp38-macosx_x86_64",
+          #   "cp39-macosx_x86_64",
+          #   "cp310-macosx_x86_64",
+          # ]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: x86_64
@@ -241,7 +244,7 @@ jobs:
         with:
           repository: google/swiftshader
           path: swiftshader
-          ref: 0863290dc7f6cc1649bab1858790e812b8aef02a
+          ref: 476165cc7c0c7247869c13f7f80dd25ec1fd2b03
       - name: checkout-swiftshader-submodules
         if: steps.cache-swiftshader.outputs.cache-hit != 'true'
         run: |
@@ -314,8 +317,9 @@ jobs:
     needs: [setup, create-release]
     strategy:
       matrix:
-        python-version:
-          ["cp38-macosx_arm64", "cp39-macosx_arm64", "cp310-macosx_arm64"]
+        python-version: [
+            "cp38-macosx_arm64 cp39-macosx_arm64 cp310-macosx_arm64",
+          ] # , "cp39-macosx_arm64", "cp310-macosx_arm64"]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: arm64
@@ -377,7 +381,7 @@ jobs:
         with:
           repository: google/swiftshader
           path: swiftshader
-          ref: 0863290dc7f6cc1649bab1858790e812b8aef02a
+          ref: 476165cc7c0c7247869c13f7f80dd25ec1fd2b03
       - name: checkout-swiftshader-submodules
         if: steps.cache-swiftshader.outputs.cache-hit != 'true'
         run: |
