@@ -1,5 +1,4 @@
-
-##############################################
+# #############################################
 
 configure_file(platform.h.in ${CMAKE_CURRENT_BINARY_DIR}/platform.h)
 
@@ -10,8 +9,8 @@ function(ncnn_src_group ncnn_src_string folder)
     string(REGEX REPLACE "/" "\\\\" _target_folder "${folder}")
 
     foreach(_file IN LISTS ${_ncnn_src_list})
-        source_group ("${_target_folder}" FILES "${_file}")
-    endforeach ()
+        source_group("${_target_folder}" FILES "${_file}")
+    endforeach()
 endfunction()
 
 set(ncnn_SRCS
@@ -177,6 +176,7 @@ if(NCNN_SHARED_LIB)
 else()
     add_library(ncnn STATIC ${ncnn_SRCS})
 endif()
+
 set_target_properties(ncnn PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(ncnn PROPERTIES VERSION ${NCNN_VERSION_STRING} SOVERSION ${NCNN_VERSION_MAJOR})
 
@@ -194,20 +194,29 @@ endif()
 
 target_include_directories(ncnn
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/ncnn>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include/ncnn>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>)
 
 if(NCNN_OPENMP)
     if(NOT NCNN_SIMPLEOMP)
         find_package(OpenMP)
-        if(NOT TARGET OpenMP::OpenMP_CXX AND (OpenMP_CXX_FOUND OR OPENMP_FOUND))
+
+        if(NOT TARGET OpenMP::OpenMP_CXX AND(OpenMP_CXX_FOUND OR OPENMP_FOUND))
             target_compile_options(ncnn PRIVATE ${OpenMP_CXX_FLAGS})
         endif()
     endif()
 
+    # if(APPLE)
+    # find_package(OpenMP REQUIRED COMPONENTS CXX)
+    # link_libraries(OpenMP::OpenMP_CXX)
+
+    # if(OpenMP_CXX_FOUND)
+    # target_link_libraries(OpenMP_CXX_LIBRARIES)
+    # endif()
+    # endif()
     if(NCNN_SIMPLEOMP OR OpenMP_CXX_FOUND OR OPENMP_FOUND)
         if(NCNN_CMAKE_VERBOSE)
             message("Building with OpenMP")
@@ -219,7 +228,7 @@ if(NCNN_OPENMP)
             else()
                 target_compile_options(ncnn PRIVATE -fopenmp)
             endif()
-        elseif(ANDROID_NDK_MAJOR AND (ANDROID_NDK_MAJOR GREATER 20))
+        elseif(ANDROID_NDK_MAJOR AND(ANDROID_NDK_MAJOR GREATER 20))
             target_compile_options(ncnn PRIVATE -fopenmp)
             target_link_libraries(ncnn PUBLIC -fopenmp -static-openmp)
         elseif(OpenMP_CXX_FOUND)
@@ -246,8 +255,10 @@ endif()
 
 if(NCNN_VULKAN)
     find_package(Vulkan QUIET)
+
     if(NOT Vulkan_FOUND)
         message(STATUS "=== CMAKE_SYSTEM_NAME is: ${CMAKE_SYSTEM_NAME}")
+
         if(DEFINED ENV{VULKAN_SDK})
             if(CMAKE_SYSTEM_NAME MATCHES "Linux")
                 list(APPEND CMAKE_MODULE_PATH "$ENV{VULKAN_SDK}/../source/VulkanTools/cmake")
@@ -264,6 +275,7 @@ if(NCNN_VULKAN)
                 "MacOS: export VULKAN_SDK=~/soft/vulkansdk/1.2.148.0/macOS\n"
             )
         endif()
+
         find_package(Vulkan REQUIRED)
     endif()
 
@@ -271,6 +283,20 @@ if(NCNN_VULKAN)
 
     target_include_directories(ncnn PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>)
     target_link_libraries(ncnn PRIVATE glslang SPIRV)
+
+    if(APPLE)
+        find_package(Vulkan REQUIRED COMPONENTS MoltenVK)
+        target_link_libraries(ncnn PUBLIC Vulkan::MoltenVK)
+
+    # link_libraries(Vulkan::Vulkan)
+    # link_libraries(Vulkan::MoltenVK)
+    # target_link_libraries(ncnn PUBLIC Vulkan_LIBRARIES)
+    # target_link_libraries(ncnn PUBLIC Vulkan_MoltenVK_LIBRARY)
+    else()
+        # find_package(Vulkan REQUIRED)
+        # link_libraries(Vulkan::Vulkan)
+        # target_link_libraries(ncnn PUBLIC Vulkan_LIBRARIES)
+    endif()
 endif()
 
 if(NCNN_PLATFORM_API AND ANDROID_NDK)
@@ -281,7 +307,7 @@ if(WIN32)
     target_compile_definitions(ncnn PUBLIC NOMINMAX)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
     target_compile_definitions(ncnn PRIVATE _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_DEPRECATE)
 
     if(CMAKE_BUILD_TYPE MATCHES "(Release|RELEASE|release)")
@@ -300,7 +326,7 @@ else()
     endif()
 
     if(CMAKE_BUILD_TYPE MATCHES "(Release|RELEASE|release)")
-        if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten" AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6))
+        if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten" AND NOT(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6))
             target_compile_options(ncnn PRIVATE -Ofast)
         endif()
 
@@ -309,6 +335,7 @@ else()
 
     # target_compile_options(ncnn PRIVATE -march=native)
     target_compile_options(ncnn PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
+
     if(NCNN_SHARED_LIB AND NCNN_ENABLE_LTO)
         set_target_properties(ncnn PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
     endif()
@@ -324,10 +351,11 @@ endif()
 
 if(NCNN_TARGET_ARCH STREQUAL "x86")
     if(NCNN_SSE2)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
             target_compile_options(ncnn PRIVATE /arch:SSE2 /D__SSE2__)
         else()
             target_compile_options(ncnn PRIVATE -msse2 -msse)
+
             if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
                 target_compile_options(ncnn PRIVATE -msimd128)
             endif()
@@ -335,35 +363,41 @@ if(NCNN_TARGET_ARCH STREQUAL "x86")
     endif()
 
     if(NOT NCNN_RUNTIME_CPU AND NCNN_AVX512)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
             target_compile_options(ncnn PRIVATE /arch:AVX512 /D__FMA__ /D__F16C__)
+
             if(NCNN_AVX512VNNI)
                 target_compile_options(ncnn PRIVATE /D__AVX512VNNI__)
             endif()
         else()
             target_compile_options(ncnn PRIVATE -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl -mfma -mf16c)
+
             if(NCNN_AVX512VNNI)
                 target_compile_options(ncnn PRIVATE -mavx512vnni)
             endif()
+
             if(NCNN_AVX512BF16)
                 target_compile_options(ncnn PRIVATE -mavx512bf16)
             endif()
+
             if(NCNN_AVX512FP16)
                 target_compile_options(ncnn PRIVATE -mavx512fp16)
             endif()
         endif()
     elseif(NOT NCNN_RUNTIME_CPU AND NCNN_FMA)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
             if(NCNN_AVX2)
                 target_compile_options(ncnn PRIVATE /arch:AVX2 /D__FMA__)
             else()
                 target_compile_options(ncnn PRIVATE /arch:AVX /D__FMA__)
             endif()
+
             if(NCNN_AVXVNNI)
                 target_compile_options(ncnn PRIVATE /D__AVXVNNI__)
             elseif(NCNN_XOP)
                 target_compile_options(ncnn PRIVATE /D__XOP__)
             endif()
+
             if(NCNN_F16C)
                 target_compile_options(ncnn PRIVATE /D__F16C__)
             endif()
@@ -373,29 +407,35 @@ if(NCNN_TARGET_ARCH STREQUAL "x86")
             else()
                 target_compile_options(ncnn PRIVATE -mavx -mfma)
             endif()
+
             if(NCNN_AVXVNNI)
                 target_compile_options(ncnn PRIVATE -mavxvnni)
             elseif(NCNN_XOP)
                 target_compile_options(ncnn PRIVATE -mxop)
             endif()
+
             if(NCNN_F16C)
                 target_compile_options(ncnn PRIVATE -mf16c)
             endif()
         endif()
     elseif(NOT NCNN_RUNTIME_CPU AND NCNN_AVX)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
             target_compile_options(ncnn PRIVATE /arch:AVX)
+
             if(NCNN_XOP)
                 target_compile_options(ncnn PRIVATE /D__XOP__)
             endif()
+
             if(NCNN_F16C)
                 target_compile_options(ncnn PRIVATE /D__F16C__)
             endif()
         else()
             target_compile_options(ncnn PRIVATE -mavx)
+
             if(NCNN_XOP)
                 target_compile_options(ncnn PRIVATE -mxop)
             endif()
+
             if(NCNN_F16C)
                 target_compile_options(ncnn PRIVATE -mf16c)
             endif()
@@ -403,7 +443,7 @@ if(NCNN_TARGET_ARCH STREQUAL "x86")
     endif()
 endif()
 
-if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm)"))
+if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm") OR(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm)"))
     if(NOT NCNN_RUNTIME_CPU AND NCNN_VFPV4)
         if(NCNN_COMPILER_SUPPORT_ARM_VFPV4)
             target_compile_options(ncnn PRIVATE -mfpu=neon-vfpv4)
@@ -413,38 +453,47 @@ if((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm") OR (CMAKE_SYSTEM_PROCESSOR MA
     endif()
 endif()
 
-if(((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR (APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)")))
+if(((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)")))
     if(NOT NCNN_RUNTIME_CPU AND NCNN_ARM86SVE)
         set(ARM_MARCH_FLAG "-march=armv8.6-a+fp16+dotprod+sve")
+
         if(NCNN_ARM86SVE2)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+sve2")
         endif()
+
         if(NCNN_ARM86SVEBF16)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+bf16")
         endif()
+
         if(NCNN_ARM86SVEI8MM)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+i8mm")
         endif()
+
         if(NCNN_ARM86SVEF32MM)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+f32mm")
         endif()
-    elseif(NOT NCNN_RUNTIME_CPU AND (NCNN_ARM84BF16 OR NCNN_ARM84I8MM))
+    elseif(NOT NCNN_RUNTIME_CPU AND(NCNN_ARM84BF16 OR NCNN_ARM84I8MM))
         set(ARM_MARCH_FLAG "-march=armv8.4-a+fp16+dotprod")
+
         if(NCNN_ARM84BF16)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+bf16")
         endif()
+
         if(NCNN_ARM84I8MM)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+i8mm")
         endif()
     elseif(NOT NCNN_RUNTIME_CPU AND NCNN_ARM82)
         set(ARM_MARCH_FLAG "-march=armv8.2-a+fp16")
+
         if(NCNN_ARM82DOT)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+dotprod")
         endif()
+
         if(NCNN_ARM82FP16FML)
             set(ARM_MARCH_FLAG "${ARM_MARCH_FLAG}+fp16fml")
         endif()
     endif()
+
     target_compile_options(ncnn PRIVATE ${ARM_MARCH_FLAG})
 endif()
 
@@ -452,6 +501,7 @@ if(NCNN_TARGET_ARCH STREQUAL "mips")
     if(NOT NCNN_RUNTIME_CPU AND NCNN_MSA)
         target_compile_options(ncnn PRIVATE -mmsa)
     endif()
+
     if(NOT NCNN_RUNTIME_CPU AND NCNN_MMI)
         target_compile_options(ncnn PRIVATE -mloongson-mmi)
     endif()
@@ -519,6 +569,7 @@ if(NCNN_INSTALL_SDK)
     install(EXPORT ncnn DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ncnn)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/ncnnConfig.cmake.in ncnnConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ncnnConfig.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ncnn)
+
     # pkgconfig
     configure_file(ncnn.pc.in ${CMAKE_CURRENT_BINARY_DIR}/ncnn.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ncnn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
@@ -528,4 +579,3 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(TARGET ncnn PROPERTY FOLDER "libncnn")
 set_property(TARGET ncnn-generate-spirv PROPERTY FOLDER "libncnn")
-

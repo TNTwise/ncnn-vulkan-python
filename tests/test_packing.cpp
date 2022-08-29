@@ -537,7 +537,6 @@ static int test_packing_gpu_image2buffer(const ncnn::Mat& a, int in_elempack, in
 
     return 0;
 }
-#endif
 
 static int test_packing_0()
 {
