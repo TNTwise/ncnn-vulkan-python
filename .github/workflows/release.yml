@@ -229,6 +229,33 @@ jobs:
         run: |
           sudo cp $GITHUB_WORKSPACE/openmp-install/include/* $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
           sudo cp $GITHUB_WORKSPACE/openmp-install/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
+      - name: cache-swiftshader
+        id: cache-swiftshader
+        uses: actions/cache@v3
+        with:
+          path: swiftshader-install
+          key: swiftshader-macos-install-20220211
+      - name: checkout-swiftshader
+        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: google/swiftshader
+          path: swiftshader
+          ref: 0863290dc7f6cc1649bab1858790e812b8aef02a
+      - name: checkout-swiftshader-submodules
+        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
+        run: |
+          cd swiftshader
+          git -c submodule."third_party/git-hooks".update=none submodule update --init --recursive
+      - name: swiftshader
+        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
+        run: |
+          cd swiftshader
+          mkdir -p build; cd build
+          cmake -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . -j 3
+          mkdir $GITHUB_WORKSPACE/swiftshader-install
+          cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
@@ -243,7 +270,18 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: "3.24.1"
-      - name: Build
+      - name: Build NCNN
+        run: |
+          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+          mkdir build && cd build
+          cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+            -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
+            -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
+            -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
+            -DNCNN_VULKAN=ON -DNCNN_BUILD_TESTS=ON ..
+          cmake --build . -j 3
+          cd ..
+      - name: Build Wheel
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
@@ -341,7 +379,20 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: "3.24.1"
-      - name: Build
+      - name: Build NCNN
+        run: |
+          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+          mkdir build && cd build
+          cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
+            -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
+            -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
+            -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include \
+            -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
+            -DNCNN_VULKAN=ON -DNCNN_BUILD_TOOLS=OFF -DNCNN_BUILD_EXAMPLES=OFF ..
+          cmake --build . -j 3
+          cd ..
+      - name: Build Wheel
         run: |
           export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
