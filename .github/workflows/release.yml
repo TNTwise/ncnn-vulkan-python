@@ -229,33 +229,6 @@ jobs:
         run: |
           sudo cp $GITHUB_WORKSPACE/openmp-install/include/* $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
           sudo cp $GITHUB_WORKSPACE/openmp-install/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
-      - name: cache-swiftshader
-        id: cache-swiftshader
-        uses: actions/cache@v3
-        with:
-          path: swiftshader-install
-          key: swiftshader-macos-install-20220211
-      - name: checkout-swiftshader
-        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
-        with:
-          repository: google/swiftshader
-          path: swiftshader
-          ref: 476165cc7c0c7247869c13f7f80dd25ec1fd2b03
-      - name: checkout-swiftshader-submodules
-        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-        run: |
-          cd swiftshader
-          git -c submodule."third_party/git-hooks".update=none submodule update --init --recursive
-      - name: swiftshader
-        if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-        run: |
-          cd swiftshader
-          mkdir -p build; cd build
-          cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build . -j 3
-          mkdir $GITHUB_WORKSPACE/swiftshader-install
-          cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
@@ -365,33 +338,6 @@ jobs:
         run: |
           sudo cp $GITHUB_WORKSPACE/openmp-install/include/* $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
           sudo cp $GITHUB_WORKSPACE/openmp-install/lib/libomp.a $DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib
-      # - name: cache-swiftshader
-      #   id: cache-swiftshader
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: swiftshader-install
-      #     key: swiftshader-macos-install-20220211
-      # - name: checkout-swiftshader
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   uses: actions/checkout@v3
-      #   with:
-      #     repository: google/swiftshader
-      #     path: swiftshader
-      #     ref: 476165cc7c0c7247869c13f7f80dd25ec1fd2b03
-      # - name: checkout-swiftshader-submodules
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   run: |
-      #     cd swiftshader
-      #     git -c submodule."third_party/git-hooks".update=none submodule update --init --recursive
-      # - name: swiftshader
-      #   if: steps.cache-swiftshader.outputs.cache-hit != 'true'
-      #   run: |
-      #     cd swiftshader
-      #     mkdir -p build; cd build
-      #     cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_INSTALL_PREFIX=install -DSWIFTSHADER_BUILD_EGL=FALSE -DSWIFTSHADER_BUILD_GLESv2=FALSE -DSWIFTSHADER_BUILD_GLES_CM=FALSE -DSWIFTSHADER_BUILD_VULKAN=TRUE -DSWIFTSHADER_BUILD_PVR=FALSE -DSWIFTSHADER_BUILD_TESTS=FALSE -DSWIFTSHADER_ENABLE_ASTC=FALSE -DSWIFTSHADER_WARNINGS_AS_ERRORS=FALSE -DREACTOR_BACKEND=Subzero -DREACTOR_DEFAULT_OPT_LEVEL=Default -DCMAKE_BUILD_TYPE=Release ..
-      #     cmake --build . -j 3
-      #     mkdir $GITHUB_WORKSPACE/swiftshader-install
-      #     cp Darwin/* $GITHUB_WORKSPACE/swiftshader-install
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
