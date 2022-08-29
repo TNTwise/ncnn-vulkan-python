@@ -77,7 +77,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install build twine
-      - name: Build
+      - name: Build Wheel
         run: |
           $env:VULKAN_SDK="$(pwd)\VulkanSDK"
           $env:CMAKE_FLAGS="-DPY_VERSION=${{ matrix.python-version }}"
