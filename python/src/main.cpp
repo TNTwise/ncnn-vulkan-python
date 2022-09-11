@@ -1385,7 +1385,13 @@ PYBIND11_MODULE(ncnn, m)
             "info", [](VulkanDevice& dev) {
                 return &dev.info;
             },
-            py::return_value_policy::reference_internal);
+            py::return_value_policy::reference_internal)
+        .def("acquire_blob_allocator", &VulkanDevice::acquire_blob_allocator)
+        .def("reclaim_blob_allocator", &VulkanDevice::reclaim_blob_allocator, py::arg("vkallocator"))
+        .def("acquire_staging_allocator", &VulkanDevice::acquire_staging_allocator)
+        .def("reclaim_staging_allocator", &VulkanDevice::reclaim_staging_allocator, py::arg("vkallocator"))
+        .def("get_heap_budget", &VulkanDevice::get_heap_budget)
+        .def("get_gpu_device", &VulkanDevice::get_gpu_device, py::arg("device_index") = 0);
 
     m.doc() = R"pbdoc(
         ncnn python wrapper
