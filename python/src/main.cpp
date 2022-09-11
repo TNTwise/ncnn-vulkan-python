@@ -1376,7 +1376,8 @@ PYBIND11_MODULE(ncnn, m)
         .def("pipeline_cache_uuid", [](GpuInfo& gpuinfo) {
             return py::memoryview::from_buffer(gpuinfo.pipeline_cache_uuid(), {VK_UUID_SIZE}, {sizeof(uint8_t) * VK_UUID_SIZE});
         })
-        .def("type", &GpuInfo::type);
+        .def("type", &GpuInfo::type)
+        .def("device_name", &GpuInfo::device_name);
 
     py::class_<VulkanDevice>(m, "VulkanDevice")
         .def(py::init<int>(), py::arg("device_index") = 0)
