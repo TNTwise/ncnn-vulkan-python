@@ -4,7 +4,7 @@ on:
     # tags:
     #   - "*"
 env:
-  DEVELOPER_DIR: /Applications/Xcode_12.4.app/Contents/Developer
+  DEVELOPER_DIR: /Applications/Xcode_14.0.1.app/Contents/Developer
 jobs:
   setup:
     permissions:
@@ -65,7 +65,7 @@ jobs:
         if: steps.cache-vulkansdk-windows.outputs.cache-hit != 'true'
         run: |
           Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.3.236.0/windows/VulkanSDK-1.3.236.0-Installer.exe?Human=true -OutFile VulkanSDK-1.3.236.0-Installer.exe
-          7z x -aoa ./VulkanSDK-1.3.236.0-Installer.exe -oVulkanSDK
+          7z x -aoa ./VulkanSDK-1.3.236.0-Installer.exe -oVulkanSDK --accept-licenses --default-answer --confirm-command 
           Remove-Item .\VulkanSDK\Demos -Recurse
       - uses: actions/setup-python@v2
         with:
