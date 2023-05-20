@@ -16,13 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <algorithm>
-#include <windows.h> // Sleep()
-#else
-#include <unistd.h> // sleep()
-#endif
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -100,18 +93,7 @@ void benchmark(const char* comment, const ncnn::Mat& _in, const ncnn::Option& op
     if (g_enable_cooling_down)
     {
         // sleep 10 seconds for cooling down SOC  :(
-#ifdef _WIN32
-        Sleep(10 * 1000);
-#elif defined(__unix__) || defined(__APPLE__)
-        sleep(10);
-#elif _POSIX_TIMERS
-        struct timespec ts;
-        ts.tv_sec = 10;
-        ts.tv_nsec = 0;
-        nanosleep(&ts, &ts);
-#else
-        // TODO How to handle it ?
-#endif
+        ncnn::sleep(10 * 1000);
     }
 
     ncnn::Mat out;
@@ -155,8 +137,8 @@ void benchmark(const char* comment, const ncnn::Mat& _in, const ncnn::Option& op
 int main(int argc, char** argv)
 {
     int loop_count = 4;
-    int num_threads = ncnn::get_cpu_count();
-    int powersave = 0;
+    int num_threads = ncnn::get_physical_big_cpu_count();
+    int powersave = 2;
     int gpu_device = -1;
     int cooling_down = 1;
 
@@ -193,8 +175,8 @@ int main(int argc, char** argv)
 
     g_loop_count = loop_count;
 
-    g_blob_pool_allocator.set_size_compare_ratio(0.0f);
-    g_workspace_pool_allocator.set_size_compare_ratio(0.5f);
+    g_blob_pool_allocator.set_size_compare_ratio(0.f);
+    g_workspace_pool_allocator.set_size_compare_ratio(0.f);
 
     if (use_vulkan_compute)
     {
@@ -205,6 +187,11 @@ int main(int argc, char** argv)
         g_blob_vkallocator = new ncnn::VkBlobAllocator(g_vkdev);
         g_staging_vkallocator = new ncnn::VkStagingAllocator(g_vkdev);
     }
+
+    ncnn::set_cpu_powersave(powersave);
+
+    ncnn::set_omp_dynamic(0);
+    ncnn::set_omp_num_threads(num_threads);
 
     // default option
     ncnn::Option opt;
@@ -229,11 +216,6 @@ int main(int argc, char** argv)
     opt.use_packing_layout = true;
     opt.use_shader_pack8 = false;
     opt.use_image_storage = false;
-
-    ncnn::set_cpu_powersave(powersave);
-
-    ncnn::set_omp_dynamic(0);
-    ncnn::set_omp_num_threads(num_threads);
 
     fprintf(stderr, "loop_count = %d\n", g_loop_count);
     fprintf(stderr, "num_threads = %d\n", num_threads);
@@ -315,6 +297,7 @@ int main(int argc, char** argv)
     benchmark("FastestDet", ncnn::Mat(352, 352, 3), opt);
     delete g_blob_vkallocator;
     delete g_staging_vkallocator;
+    ncnn::destroy_gpu_instance();
 
     return 0;
 }

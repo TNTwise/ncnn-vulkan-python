@@ -805,14 +805,14 @@ int ConvolutionDepthWise_arm::forward_bf16s(const Mat& bottom_blob, Mat& top_blo
 
                             for (int k = 0; k < maxk; k++)
                             {
-                                float32x4_t _val = float2bfloat(vld1_u16(sptr + space_ofs[k] * 4));
-                                float32x4_t _w = float2bfloat(vld1_u16(kptr + k * 4));
+                                float32x4_t _val = bfloat2float(vld1_u16(sptr + space_ofs[k] * 4));
+                                float32x4_t _w = bfloat2float(vld1_u16(kptr + k * 4));
                                 _sum = vmlaq_f32(_sum, _val, _w);
                             }
 
                             _sum = activation_ps(_sum, activation_type, activation_params);
 
-                            vst1_u16(outptr + j * 4, bfloat2float(_sum));
+                            vst1_u16(outptr + j * 4, float2bfloat(_sum));
                         }
 
                         outptr += outw * 4;
@@ -1550,7 +1550,7 @@ int ConvolutionDepthWise_arm::forward_int8_arm(const Mat& bottom_blob, Mat& top_
         const ncnn::Layer* op = group_ops[g];
 
         Option opt_g = opt;
-        opt_g.blob_allocator = top_blob.allocator;
+        opt_g.blob_allocator = top_blob_unpacked.allocator;
 
         // forward
         op->forward(bottom_blob_bordered_g, top_blob_g, opt_g);

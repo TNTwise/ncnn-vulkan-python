@@ -72,6 +72,7 @@ public:
 #endif // NCNN_STRING
 
     std::vector<custom_layer_registry_entry> custom_layer_registry;
+    std::vector<overwrite_builtin_layer_registry_entry> overwrite_builtin_layer_registry;
 
     PoolAllocator* local_blob_allocator;
     PoolAllocator* local_workspace_allocator;
@@ -119,7 +120,7 @@ int NetPrivate::upload_model()
     {
         if (layers[i]->support_vulkan)
         {
-            int uret = layers[i]->upload_model(cmd, opt_upload);
+            int uret = layers[i]->upload_model(cmd, get_masked_option(opt_upload, layers[i]->featmask));
             if (uret != 0)
             {
                 NCNN_LOGE("layer upload_model %d failed", (int)i);
@@ -139,31 +140,16 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, cons
 
     //     NCNN_LOGE("forward_layer %d %s", layer_index, layer->name.c_str());
 
-    if (layer->one_blob_only)
+    // load bottom blobs
+    for (size_t i = 0; i < layer->bottoms.size(); i++)
     {
-        // load bottom blob
-        int bottom_blob_index = layer->bottoms[0];
+        int bottom_blob_index = layer->bottoms[i];
 
         if (blob_mats[bottom_blob_index].dims == 0)
         {
             int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
             if (ret != 0)
                 return ret;
-        }
-    }
-    else
-    {
-        // load bottom blobs
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
-        {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (blob_mats[bottom_blob_index].dims == 0)
-            {
-                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
-                if (ret != 0)
-                    return ret;
-            }
         }
     }
 
@@ -181,7 +167,15 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, cons
         bottom_blob.elemsize = blob_mats[bottom_blob_index].elemsize;
     }
 #endif
-    int ret = do_forward_layer(layer, blob_mats, opt);
+    int ret = 0;
+    if (layer->featmask)
+    {
+        ret = do_forward_layer(layer, blob_mats, get_masked_option(opt, layer->featmask));
+    }
+    else
+    {
+        ret = do_forward_layer(layer, blob_mats, opt);
+    }
 #if NCNN_BENCHMARK
     double end = get_current_time();
     if (layer->one_blob_only)
@@ -212,10 +206,10 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std:
 
     bool cmd_submit_and_wait = false;
 
-    if (layer->one_blob_only)
+    // load bottom blobs
+    for (size_t i = 0; i < layer->bottoms.size(); i++)
     {
-        // load bottom blob
-        int bottom_blob_index = layer->bottoms[0];
+        int bottom_blob_index = layer->bottoms[i];
 
         if (blob_mats_gpu[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims == 0)
         {
@@ -258,56 +252,6 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std:
             }
         }
     }
-    else
-    {
-        // load bottom blobs
-        std::vector<VkMat> bottom_blobs(layer->bottoms.size());
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
-        {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (blob_mats_gpu[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims == 0)
-            {
-                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, blob_mats_gpu, cmd, opt);
-                if (ret != 0)
-                    return ret;
-            }
-
-            if (layer->support_vulkan)
-            {
-                if (blob_mats_gpu[bottom_blob_index].dims == 0)
-                {
-                    // host to buffer
-                    cmd.record_upload(blob_mats[bottom_blob_index], blob_mats_gpu[bottom_blob_index], opt);
-
-                    if (opt.lightmode)
-                    {
-                        // delete after taken in light mode
-                        blob_mats[bottom_blob_index].release();
-                    }
-                }
-            }
-            else
-            {
-                if (blob_mats[bottom_blob_index].dims == 0)
-                {
-                    Option opt_download = opt;
-                    opt_download.use_packing_layout = layer->support_packing;
-
-                    // buffer to host
-                    cmd.record_download(blob_mats_gpu[bottom_blob_index], blob_mats[bottom_blob_index], opt_download);
-
-                    if (opt.lightmode)
-                    {
-                        // delete after taken in light mode
-                        blob_mats_gpu[bottom_blob_index].release();
-                    }
-
-                    cmd_submit_and_wait = true;
-                }
-            }
-        }
-    }
 
     if (cmd_submit_and_wait)
     {
@@ -337,7 +281,14 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std:
 #if NCNN_BENCHMARK
         cmd.record_write_timestamp(layer_index * 2);
 #endif
-        ret = do_forward_layer(layer, blob_mats_gpu, cmd, opt);
+        if (layer->featmask)
+        {
+            ret = do_forward_layer(layer, blob_mats_gpu, cmd, get_masked_option(opt, layer->featmask));
+        }
+        else
+        {
+            ret = do_forward_layer(layer, blob_mats_gpu, cmd, opt);
+        }
 #if NCNN_BENCHMARK
         cmd.record_write_timestamp(layer_index * 2 + 1);
 #endif
@@ -353,7 +304,14 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std:
             bottom_blob = blob_mats[bottom_blob_index].shape();
         }
 #endif
-        ret = do_forward_layer(layer, blob_mats, opt);
+        if (layer->featmask)
+        {
+            ret = do_forward_layer(layer, blob_mats, get_masked_option(opt, layer->featmask));
+        }
+        else
+        {
+            ret = do_forward_layer(layer, blob_mats, opt);
+        }
 #if NCNN_BENCHMARK
         double end = get_current_time();
         if (layer->one_blob_only)
@@ -395,10 +353,10 @@ IMAGE_ALLOCATION_FAILED:
 #endif
     }
 
-    if (layer->one_blob_only)
+    // load bottom blobs
+    for (size_t i = 0; i < layer->bottoms.size(); i++)
     {
-        // load bottom blob
-        int bottom_blob_index = layer->bottoms[0];
+        int bottom_blob_index = layer->bottoms[i];
 
         if (blob_mats_gpu_image[bottom_blob_index].dims == 0 && blob_mats_gpu[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims == 0)
         {
@@ -511,126 +469,6 @@ IMAGE_ALLOCATION_FAILED:
             }
         }
     }
-    else
-    {
-        // load bottom blobs
-        std::vector<VkImageMat> bottom_blobs(layer->bottoms.size());
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
-        {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (blob_mats_gpu_image[bottom_blob_index].dims == 0 && blob_mats_gpu[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims == 0)
-            {
-                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, blob_mats_gpu, blob_mats_gpu_image, cmd, opt);
-                if (ret != 0)
-                    return ret;
-            }
-
-            if (layer->support_vulkan && !image_allocation_failed)
-            {
-                if (layer->support_image_storage)
-                {
-                    if (blob_mats_gpu_image[bottom_blob_index].dims == 0)
-                    {
-                        if (blob_mats_gpu[bottom_blob_index].dims == 0)
-                        {
-                            // host to image
-                            cmd.record_upload(blob_mats[bottom_blob_index], blob_mats_gpu_image[bottom_blob_index], opt);
-
-                            if (blob_mats_gpu_image[bottom_blob_index].empty())
-                            {
-                                image_allocation_failed = true;
-                                goto IMAGE_ALLOCATION_FAILED;
-                            }
-
-                            if (opt.lightmode)
-                            {
-                                // delete after taken in light mode
-                                blob_mats[bottom_blob_index].release();
-                            }
-                        }
-                        else
-                        {
-                            // buffer to image
-                            cmd.record_buffer_to_image(blob_mats_gpu[bottom_blob_index], blob_mats_gpu_image[bottom_blob_index], opt);
-
-                            if (blob_mats_gpu_image[bottom_blob_index].empty())
-                            {
-                                image_allocation_failed = true;
-                                goto IMAGE_ALLOCATION_FAILED;
-                            }
-
-                            if (opt.lightmode)
-                            {
-                                // delete after taken in light mode
-                                blob_mats_gpu[bottom_blob_index].release();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (blob_mats_gpu[bottom_blob_index].dims == 0)
-                    {
-                        if (blob_mats_gpu_image[bottom_blob_index].dims == 0)
-                        {
-                            // host to buffer
-                            cmd.record_upload(blob_mats[bottom_blob_index], blob_mats_gpu[bottom_blob_index], opt);
-
-                            if (opt.lightmode)
-                            {
-                                // delete after taken in light mode
-                                blob_mats[bottom_blob_index].release();
-                            }
-                        }
-                        else
-                        {
-                            // image to buffer
-                            cmd.record_image_to_buffer(blob_mats_gpu_image[bottom_blob_index], blob_mats_gpu[bottom_blob_index], opt);
-
-                            if (opt.lightmode)
-                            {
-                                // delete after taken in light mode
-                                blob_mats_gpu_image[bottom_blob_index].release();
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (blob_mats[bottom_blob_index].dims == 0)
-                {
-                    if (blob_mats_gpu_image[bottom_blob_index].dims == 0)
-                    {
-                        // buffer to host
-                        cmd.record_download(blob_mats_gpu[bottom_blob_index], blob_mats[bottom_blob_index], opt);
-
-                        if (opt.lightmode)
-                        {
-                            // delete after taken in light mode
-                            blob_mats_gpu[bottom_blob_index].release();
-                        }
-
-                        cmd_submit_and_wait = true;
-                    }
-                    else
-                    {
-                        // image to host
-                        cmd.record_download(blob_mats_gpu_image[bottom_blob_index], blob_mats[bottom_blob_index], opt);
-
-                        if (opt.lightmode)
-                        {
-                            // delete after taken in light mode
-                            blob_mats_gpu_image[bottom_blob_index].release();
-                        }
-
-                        cmd_submit_and_wait = true;
-                    }
-                }
-            }
-        }
-    }
 
     if (cmd_submit_and_wait)
     {
@@ -662,7 +500,14 @@ IMAGE_ALLOCATION_FAILED:
 #endif
         if (layer->support_image_storage)
         {
-            ret = do_forward_layer(layer, blob_mats_gpu_image, cmd, opt);
+            if (layer->featmask)
+            {
+                ret = do_forward_layer(layer, blob_mats_gpu_image, cmd, get_masked_option(opt, layer->featmask));
+            }
+            else
+            {
+                ret = do_forward_layer(layer, blob_mats_gpu_image, cmd, opt);
+            }
             if (ret == -100)
             {
                 image_allocation_failed = true;
@@ -671,7 +516,14 @@ IMAGE_ALLOCATION_FAILED:
         }
         else
         {
-            ret = do_forward_layer(layer, blob_mats_gpu, cmd, opt);
+            if (layer->featmask)
+            {
+                ret = do_forward_layer(layer, blob_mats_gpu, cmd, get_masked_option(opt, layer->featmask));
+            }
+            else
+            {
+                ret = do_forward_layer(layer, blob_mats_gpu, cmd, opt);
+            }
         }
 #if NCNN_BENCHMARK
         cmd.record_write_timestamp(layer_index * 2 + 1);
@@ -688,7 +540,14 @@ IMAGE_ALLOCATION_FAILED:
             bottom_blob = blob_mats[bottom_blob_index].shape();
         }
 #endif
-        ret = do_forward_layer(layer, blob_mats, opt);
+        if (layer->featmask)
+        {
+            ret = do_forward_layer(layer, blob_mats, get_masked_option(opt, layer->featmask));
+        }
+        else
+        {
+            ret = do_forward_layer(layer, blob_mats, opt);
+        }
 #if NCNN_BENCHMARK
         double end = get_current_time();
         if (layer->one_blob_only)
@@ -774,6 +633,7 @@ int NetPrivate::convert_layout(Mat& bottom_blob, const Layer* layer, const Optio
     // *INDENT-ON*
     // clang-format on
 
+    int dst_elempack = 1;
     if (opt.use_packing_layout)
     {
         // resolve dst_elempack
@@ -785,7 +645,6 @@ int NetPrivate::convert_layout(Mat& bottom_blob, const Layer* layer, const Optio
 
         int elembits = bottom_blob.elembits();
 
-        int dst_elempack = 1;
         if (layer->support_packing)
         {
             if (elembits == 32)
@@ -814,7 +673,7 @@ int NetPrivate::convert_layout(Mat& bottom_blob, const Layer* layer, const Optio
             if (elembits == 16)
             {
 #if NCNN_ARM82
-                if (elemcount % 8 == 0 && opt.use_fp16_storage && opt.use_fp16_arithmetic && layer->support_fp16_storage)
+                if (elemcount % 8 == 0 && ncnn::cpu_support_arm_asimdhp() && opt.use_fp16_arithmetic)
                     dst_elempack = 8;
                 else if (elemcount % 4 == 0)
                     dst_elempack = 4;
@@ -839,13 +698,13 @@ int NetPrivate::convert_layout(Mat& bottom_blob, const Layer* layer, const Optio
 #endif
             }
         }
+    }
 
-        if (bottom_blob.elempack != dst_elempack)
-        {
-            Mat bottom_blob_packed;
-            convert_packing(bottom_blob, bottom_blob_packed, dst_elempack, opt);
-            bottom_blob = bottom_blob_packed;
-        }
+    if (bottom_blob.elempack != dst_elempack)
+    {
+        Mat bottom_blob_packed;
+        convert_packing(bottom_blob, bottom_blob_packed, dst_elempack, opt);
+        bottom_blob = bottom_blob_packed;
     }
 
     return 0;
@@ -962,12 +821,12 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<Mat>& blob_mats
             }
         }
 
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
+        if (opt.lightmode)
         {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (opt.lightmode)
+            for (size_t i = 0; i < layer->bottoms.size(); i++)
             {
+                int bottom_blob_index = layer->bottoms[i];
+
                 // delete after taken in light mode
                 blob_mats[bottom_blob_index].release();
             }
@@ -1088,12 +947,12 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<VkMat>& blob_ma
             }
         }
 
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
+        if (opt.lightmode)
         {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (opt.lightmode)
+            for (size_t i = 0; i < layer->bottoms.size(); i++)
             {
+                int bottom_blob_index = layer->bottoms[i];
+
                 // delete after taken in light mode
                 blob_mats_gpu[bottom_blob_index].release();
             }
@@ -1213,12 +1072,12 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<VkImageMat>& bl
             }
         }
 
-        for (size_t i = 0; i < layer->bottoms.size(); i++)
+        if (opt.lightmode)
         {
-            int bottom_blob_index = layer->bottoms[i];
-
-            if (opt.lightmode)
+            for (size_t i = 0; i < layer->bottoms.size(); i++)
             {
+                int bottom_blob_index = layer->bottoms[i];
+
                 // delete after taken in light mode
                 blob_mats_gpu_image[bottom_blob_index].release();
             }
@@ -1299,8 +1158,24 @@ int Net::register_custom_layer(const char* type, layer_creator_func creator, lay
     int typeindex = layer_to_index(type);
     if (typeindex != -1)
     {
-        NCNN_LOGE("can not register build-in layer type %s", type);
-        return -1;
+        NCNN_LOGE("overwrite built-in layer type %s", type);
+
+        for (size_t i = 0; i < d->overwrite_builtin_layer_registry.size(); i++)
+        {
+            if (d->overwrite_builtin_layer_registry[i].typeindex == typeindex)
+            {
+                NCNN_LOGE("overwrite existing overwritten built-in layer index %d", typeindex);
+
+                d->overwrite_builtin_layer_registry[i].creator = creator;
+                d->overwrite_builtin_layer_registry[i].destroyer = destroyer;
+                d->overwrite_builtin_layer_registry[i].userdata = userdata;
+                return 0;
+            }
+        }
+
+        struct overwrite_builtin_layer_registry_entry entry = {typeindex, creator, destroyer, userdata};
+        d->overwrite_builtin_layer_registry.push_back(entry);
+        return 0;
     }
 
     int custom_index = custom_layer_to_index(type);
@@ -1327,8 +1202,24 @@ int Net::register_custom_layer(int index, layer_creator_func creator, layer_dest
     int custom_index = index & ~LayerType::CustomBit;
     if (index == custom_index)
     {
-        NCNN_LOGE("can not register build-in layer index %d", custom_index);
-        return -1;
+        NCNN_LOGE("overwrite built-in layer type %d", index);
+
+        for (size_t i = 0; i < d->overwrite_builtin_layer_registry.size(); i++)
+        {
+            if (d->overwrite_builtin_layer_registry[i].typeindex == index)
+            {
+                NCNN_LOGE("overwrite existing overwritten built-in layer index %d", index);
+
+                d->overwrite_builtin_layer_registry[i].creator = creator;
+                d->overwrite_builtin_layer_registry[i].destroyer = destroyer;
+                d->overwrite_builtin_layer_registry[i].userdata = userdata;
+                return 0;
+            }
+        }
+
+        struct overwrite_builtin_layer_registry_entry entry = {index, creator, destroyer, userdata};
+        d->overwrite_builtin_layer_registry.push_back(entry);
+        return 0;
     }
 
     if ((int)d->custom_layer_registry.size() <= custom_index)
@@ -1431,7 +1322,11 @@ int Net::load_param(const DataReader& dr)
         SCAN_VALUE("%d", bottom_count)
         SCAN_VALUE("%d", top_count)
 
-        Layer* layer = create_layer(layer_type);
+        Layer* layer = create_overwrite_builtin_layer(layer_type);
+        if (!layer)
+        {
+            layer = create_layer(layer_type);
+        }
         if (!layer)
         {
             layer = create_custom_layer(layer_type);
@@ -1549,6 +1444,9 @@ int Net::load_param(const DataReader& dr)
             layer->top_shapes[j] = d->blobs[layer->tops[j]].shape;
         }
 
+        // pull out layer specific feature disabled set
+        layer->featmask = pd.get(31, 0);
+
         int lr = layer->load_param(pd);
         if (lr != 0)
         {
@@ -1641,7 +1539,11 @@ int Net::load_param_bin(const DataReader& dr)
         READ_VALUE(bottom_count)
         READ_VALUE(top_count)
 
-        Layer* layer = create_layer(typeindex);
+        Layer* layer = create_overwrite_builtin_layer(typeindex);
+        if (!layer)
+        {
+            layer = create_layer(typeindex);
+        }
         if (!layer)
         {
             int custom_index = typeindex & ~LayerType::CustomBit;
@@ -1747,6 +1649,9 @@ int Net::load_param_bin(const DataReader& dr)
         {
             layer->top_shapes[j] = d->blobs[layer->tops[j]].shape;
         }
+
+        // pull out layer specific feature disabled set
+        layer->featmask = pd.get(31, 0);
 
         int lr = layer->load_param(pd);
         if (lr != 0)
@@ -1862,7 +1767,7 @@ int Net::load_model(const DataReader& dr)
             if (!d->local_workspace_allocator)
             {
                 d->local_workspace_allocator = new PoolAllocator;
-                d->local_workspace_allocator->set_size_compare_ratio(0.5f);
+                d->local_workspace_allocator->set_size_compare_ratio(0.f);
             }
         }
     }
@@ -2035,11 +1940,13 @@ void Net::clear()
     {
         Layer* layer = d->layers[i];
 
-        Option opt1 = opt;
+        Option opt1 = get_masked_option(opt, layer->featmask);
+#if NCNN_VULKAN
         if (!layer->support_image_storage)
         {
             opt1.use_image_storage = false;
         }
+#endif // NCNN_VULKAN
 
         int dret = layer->destroy_pipeline(opt1);
         if (dret != 0)
@@ -2062,7 +1969,26 @@ void Net::clear()
         }
         else
         {
-            delete layer;
+            // check overwrite builtin layer destroyer
+            int index = -1;
+            const size_t overwrite_builtin_layer_registry_entry_count = d->overwrite_builtin_layer_registry.size();
+            for (size_t i = 0; i < overwrite_builtin_layer_registry_entry_count; i++)
+            {
+                if (d->overwrite_builtin_layer_registry[i].typeindex == layer->typeindex)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index != -1 && d->overwrite_builtin_layer_registry[index].destroyer)
+            {
+                d->overwrite_builtin_layer_registry[index].destroyer(layer, d->overwrite_builtin_layer_registry[index].userdata);
+            }
+            else
+            {
+                delete layer;
+            }
         }
     }
     d->layers.clear();
@@ -2209,6 +2135,15 @@ Layer* Net::create_custom_layer(const char* type)
 
     return create_custom_layer(index);
 }
+
+Layer* Net::create_overwrite_builtin_layer(const char* type)
+{
+    int typeindex = layer_to_index(type);
+    if (typeindex == -1)
+        return 0;
+
+    return create_overwrite_builtin_layer(typeindex);
+}
 #endif // NCNN_STRING
 
 Layer* Net::create_custom_layer(int index)
@@ -2223,6 +2158,31 @@ Layer* Net::create_custom_layer(int index)
 
     Layer* layer = layer_creator(d->custom_layer_registry[index].userdata);
     layer->typeindex = ncnn::LayerType::CustomBit | index;
+    return layer;
+}
+
+Layer* Net::create_overwrite_builtin_layer(int typeindex)
+{
+    int index = -1;
+    const size_t overwrite_builtin_layer_registry_entry_count = d->overwrite_builtin_layer_registry.size();
+    for (size_t i = 0; i < overwrite_builtin_layer_registry_entry_count; i++)
+    {
+        if (d->overwrite_builtin_layer_registry[i].typeindex == typeindex)
+        {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1)
+        return 0;
+
+    layer_creator_func layer_creator = d->overwrite_builtin_layer_registry[index].creator;
+    if (!layer_creator)
+        return 0;
+
+    Layer* layer = layer_creator(d->overwrite_builtin_layer_registry[index].userdata);
+    layer->typeindex = typeindex;
     return layer;
 }
 

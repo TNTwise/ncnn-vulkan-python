@@ -31,7 +31,6 @@
 #include "pass_ncnn/insert_split.h"
 #include "pass_ncnn/chain_multi_output.h"
 #include "pass_ncnn/solve_batch_index.h"
-#include "pass_ncnn/convert_to_fp16_model.h"
 
 #include "pass_ncnn/eliminate_noop.h"
 #include "pass_ncnn/eliminate_tail_reshape_permute.h"
@@ -44,6 +43,7 @@
 #include "pass_ncnn/fuse_innerproduct_activation.h"
 #include "pass_ncnn/fuse_transpose_matmul.h"
 #include "pass_ncnn/fuse_binaryop_eltwise.h"
+#include "pass_ncnn/insert_reshape_numpy_binaryop_broadcast.h"
 #include "pass_ncnn/insert_reshape_linear.h"
 #include "pass_ncnn/insert_reshape_pooling.h"
 
@@ -86,6 +86,7 @@ void pass_ncnn(Graph& g)
 
     ncnn::convert_half_to_float(g);
 
+    ncnn::insert_reshape_numpy_binaryop_broadcast(g);
     ncnn::insert_reshape_pooling(g);
     ncnn::insert_reshape_linear(g);
 
@@ -134,8 +135,6 @@ void pass_ncnn(Graph& g)
     ncnn::convert_input(g);
 
     ncnn::eliminate_output(g);
-
-    ncnn::convert_to_fp16_model(g);
 }
 
 } // namespace pnnx

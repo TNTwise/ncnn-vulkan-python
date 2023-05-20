@@ -538,11 +538,8 @@ static int test_packing_gpu_image2buffer(const ncnn::Mat& a, int in_elempack, in
     return 0;
 }
 
-static int test_packing_0()
+static int test_packing_cpu(const ncnn::Mat& a)
 {
-    ncnn::Mat a = RandomMat(9, 7, 10, 16);
-    ncnn::Mat b = RandomMat(9, 7, 10, 3);
-
     return 0
            || test_packing_cpu(a, 1, 1)
            || test_packing_cpu(a, 4, 4)
@@ -618,7 +615,6 @@ static int test_packing_1()
 {
     ncnn::Mat a = RandomMat(9, 10, 16);
     ncnn::Mat b = RandomMat(9, 10, 3);
-
     return 0
            || test_packing_cpu(a, 1, 1)
            || test_packing_cpu(a, 4, 4)
@@ -693,7 +689,6 @@ static int test_packing_1()
 static int test_packing_2()
 {
     ncnn::Mat a = RandomMat(19, 16);
-
     return 0
            || test_packing_cpu(a, 1, 1)
            || test_packing_cpu(a, 4, 4)
@@ -753,7 +748,6 @@ static int test_packing_2()
 static int test_packing_3()
 {
     ncnn::Mat a = RandomMat(80);
-
     return 0
            || test_packing_cpu(a, 1, 1)
            || test_packing_cpu(a, 4, 4)

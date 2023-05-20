@@ -14,7 +14,9 @@
 * [ConvolutionDepthWise](#convolutiondepthwise)
 * [ConvolutionDepthWise1D](#convolutiondepthwise1d)
 * [ConvolutionDepthWise3D](#convolutiondepthwise3d)
+* [CopyTo](#copyto)
 * [Crop](#crop)
+* [CumulativeSum](#cumulativesum)
 * [Deconvolution](#deconvolution)
 * [Deconvolution1D](#deconvolution1d)
 * [Deconvolution3D](#deconvolution3d)
@@ -29,7 +31,9 @@
 * [Exp](#exp)
 * [Flatten](#flatten)
 * [GELU](#gelu)
+* [GLU](#glu)
 * [Gemm](#gemm)
+* [GridSample](#gridsample)
 * [GroupNorm](#groupnorm)
 * [GRU](#gru)
 * [HardSigmoid](#hardsigmoid)
@@ -159,6 +163,9 @@ Operation type:
 - 6 = POW
 - 7 = RSUB
 - 8 = RDIV
+- 9 = RPOW
+- 10 = ATAN2
+- 11 = RATAN2
 
 # BNLL
 ```
@@ -424,6 +431,22 @@ y = activation(x3, act_type, act_params)
 | weight_data   | float/fp16/int8 | [kernel_w, kernel_h, kernel_d, num_input / group, num_output / group, group] |
 | bias_data     | float | [num_output]          |
 
+# CopyTo
+```
+self[offset] = src
+```
+
+* one_blob_only
+
+| param id  | name          | type  | default   | description       |
+| --------- | ------------- | ----- | --------- | ----------------- |
+| 0         | woffset       | int   | 0         |                   |
+| 1         | hoffset       | int   | 0         |                   |
+| 13        | doffset       | int   | 0         |                   |
+| 2         | coffset       | int   | 0         |                   |
+| 9         | starts        | array | [ ]       |                   |
+| 11        | axes          | array | [ ]       |                   |
+
 # Crop
 ```
 y = crop(x)
@@ -445,6 +468,20 @@ y = crop(x)
 | 9         | starts        | array | [ ]       |                   |
 | 10        | ends          | array | [ ]       |                   |
 | 11        | axes          | array | [ ]       |                   |
+
+# CumulativeSum
+
+If axis < 0, we use axis = x.dims + axis
+
+It implements https://pytorch.org/docs/stable/generated/torch.cumsum.html
+
+* one_blob_only
+* support_inplace
+
+| param id  | name          | type  | default   | description       |
+| --------- | ------------- | ----- | --------- | ----------------- |
+| 0         | axis          | int   | 0         |                   |
+
 
 # Deconvolution
 ```
@@ -784,12 +821,28 @@ else                y = 0.5 * x * erfc(-0.70710678 * x)
 | --------- | ------------- | ----- | --------- | ----------------- |
 | 0         | fast_gelu     | int   | 0         | use approximation |
 
+# GLU
+
+If axis < 0, we use axis = x.dims + axis
+
+GLU(a,b)=a⊗σ(b)
+
+where a is the first half of the input matrix and b is the second half.
+
+axis specifies the dimension to split the input
+
+* one_blob_only
+
+| param id  | name          | type  | default   | description       |
+| --------- | ------------- | ----- | --------- | ----------------- |
+| 0         | axis          | int   | 0         |                   |
+
 # Gemm
 ```
 a = transA ? transpose(x0) : x0
 b = transb ? transpose(x1) : x1
 c = x2
-y = gemm(a, b) * alpha + c * beta
+y = (gemm(a, b) + c * beta) * alpha
 ```
 
 | param id  | name          | type  | default   | description       |
@@ -798,6 +851,54 @@ y = gemm(a, b) * alpha + c * beta
 | 1         | beta          | float | 1.f       |                   |
 | 2         | transA        | int   | 0         |                   |
 | 3         | transb        | int   | 0         |                   |
+| 4         | constantA     | int   | 0         |                   |
+| 5         | constantB     | int   | 0         |                   |
+| 6         | constantC     | int   | 0         |                   |
+| 7         | constantM     | int   | 0         |                   |
+| 8         | constantN     | int   | 0         |                   |
+| 9         | constantK     | int   | 0         |                   |
+| 10        | constant_broadcast_type_C | int | 0 |                 |
+| 11        | output_N1M    | int   | 0         |                   |
+| 12        | output_elempack | int | 0         |                   |
+| 13        | output_elemtype | int | 0         |                   |
+| 14        | output_transpose | int| 0         |                   |
+| 20        | constant_TILE_M | int | 0         |                   |
+| 21        | constant_TILE_N | int | 0         |                   |
+| 22        | constant_TILE_K | int | 0         |                   |
+
+| weight        | type  | shape                 |
+| ------------- | ----- | --------------------- |
+| A_data        | float | [M, K] or [K, M]      |
+| B_data        | float | [N, K] or [K, N]      |
+| C_data        | float | [1], [M] or [N] or [1, M] or [N,1] or [N, M] |
+
+# GridSample
+```
+Given an input and a flow-field grid, computes the output using input values and pixel locations from grid.
+
+For each output location output[:, h2, w2], the size-2 vector grid[h2, w2, 2] specifies input pixel[:, h1, w1] locations x and y, 
+which are used to interpolate the output value output[:, h2, w2]
+
+This function is often used in conjunction with affine_grid() to build Spatial Transformer Networks .
+```
+
+| param id  | name          | type  | default   | description       |
+| --------- | ------------- | ----- | --------- | ----------------- |
+| 0         | sample_type   | int   | 1         |                   |
+| 1         | padding_mode  | int   | 1         |                   |
+| 2         | align_corner  | int   | 0         |                   |
+
+
+Sample type:
+- 1 = Nearest
+- 2 = Bilinear
+- 3 = Bicubic
+
+Padding mode:
+- 1 = zeros
+- 2 = border
+- 3 = reflection
+
 
 # GroupNorm
 ```
@@ -1026,15 +1127,17 @@ y0, hidden y1, cell y2 = lstm(x0, hidden x1, cell x2)
 
 | param id  | name          | type  | default   | description       |
 | --------- | ------------- | ----- | --------- | ----------------- |
-| 0         | num_output    | int   | 0         | hidden size of output |
+| 0         | num_output    | int   | 0         | output size of output |
 | 1         | weight_data_size| int | 0         | total size of IFOG weight matrix |
 | 2         | direction     | int   | 0         | 0=forward, 1=reverse, 2=bidirectional |
+| 3         | hidden_size   | int   | num_output| hidden size       |
 
 | weight        | type  | shape                 |
 | ------------- | ----- | --------------------- |
-| weight_xc_data| float/fp16/int8 | [input_size, num_output * 4, num_directions] |
-| bias_c_data   | float/fp16/int8 | [num_output, 4, num_directions] |
-| weight_hc_data| float/fp16/int8 | [num_output, num_output * 4, num_directions] |
+| weight_xc_data| float/fp16/int8 | [input_size, hidden_size * 4, num_directions] |
+| bias_c_data   | float/fp16/int8 | [hidden_size, 4, num_directions] |
+| weight_hc_data| float/fp16/int8 | [num_output, hidden_size * 4, num_directions] |
+| weight_hr_data| float/fp16/int8 | [hidden_size, num_output, num_directions] |
 
 Direction flag:
 - 0 = forward only
@@ -1073,6 +1176,7 @@ for each num_head part
     xk = affine(k)
     xv = affine(v)
     xqk = xq * xk
+    xqk = xqk + attn_mask if attn_mask exists
     softmax_inplace(xqk)
     xqkv = xqk * xv
     merge xqkv to out
@@ -1082,16 +1186,19 @@ y = affine(out)
 | param id  | name          | type  | default   | description       |
 | --------- | ------------- | ----- | --------- | ----------------- |
 | 0         | embed_dim     | int   | 0         |                   |
-| 1         | num_head      | int   | 1         |                   |
+| 1         | num_heads     | int   | 1         |                   |
 | 2         | weight_data_size| int | 0         |                   |
+| 3         | kdim          | int   | embed_dim |                   |
+| 4         | vdim          | int   | embed_dim |                   |
+| 5         | attn_mask     | int   | 0         |                   |
 
 | weight        | type  | shape                 |
 | ------------- | ----- | --------------------- |
 | q_weight_data | float/fp16/int8 | [weight_data_size] |
 | q_bias_data   | float | [embed_dim]           |
-| k_weight_data | float/fp16/int8 | [weight_data_size] |
+| k_weight_data | float/fp16/int8 | [embed_dim * kdim] |
 | k_bias_data   | float | [embed_dim]           |
-| v_weight_data | float/fp16/int8 | [weight_data_size] |
+| v_weight_data | float/fp16/int8 | [embed_dim * vdim] |
 | v_bias_data   | float | [embed_dim]           |
 | out_weight_data| float/fp16/int8 | [weight_data_size] |
 | out_bias_data | float | [embed_dim]           |
@@ -1671,3 +1778,4 @@ Operation type:
 - 14 = ATAN
 - 15 = RECIPROCAL
 - 16 = TANH
+- 17 = LOG10

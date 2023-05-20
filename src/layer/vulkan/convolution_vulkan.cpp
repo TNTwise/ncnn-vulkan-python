@@ -188,13 +188,14 @@ int Convolution_vulkan::create_pipeline(const Option& _opt)
             Mat weight_data_tm;
             weight_data_tm.create(6 * 6, num_input, num_output);
 
+            const float sq2 = 1.41421356237f;
             const float ktm[6][3] = {
                 {1.0f, 0.0f, 0.0f},
-                {-2.0f / 3, -2.0f / 3, -2.0f / 3},
-                {-2.0f / 3, 2.0f / 3, -2.0f / 3},
-                {1.0f / 6, 1.0f / 3, 2.0f / 3},
-                {1.0f / 6, -1.0f / 3, 2.0f / 3},
-                {0.0f, 0.0f, 4.0f}
+                {-2.0f / 3, -sq2 / 3, -1.0f / 3},
+                {-2.0f / 3, sq2 / 3, -1.0f / 3},
+                {1.0f / 6, sq2 / 6, 1.0f / 3},
+                {1.0f / 6, -sq2 / 6, 1.0f / 3},
+                {0.0f, 0.0f, 1.0f}
             };
 
             #pragma omp parallel for num_threads(opt.num_threads)
@@ -794,7 +795,11 @@ int Convolution_vulkan::create_pipeline(const Option& _opt)
         convert_packing(bias_data, bias_data_packed, out_elempack, opt);
     }
 
-    if (opt.use_sgemm_convolution && !is_conv1x1s1d1 && num_input >= 16 && num_output >= 16)
+    if (opt.use_winograd_convolution && (opt.use_winograd23_convolution || opt.use_winograd43_convolution) && is_conv3x3s1d1 && num_input >= 16 && num_output >= 16)
+    {
+        // pass
+    }
+    else if (opt.use_sgemm_convolution && !is_conv1x1s1d1 && num_input >= 16 && num_output >= 16)
     {
         bool use_cooperative_matrix = vkdev->info.support_cooperative_matrix_16_8_8() && opt.use_cooperative_matrix && !opt.use_image_storage && !opt.use_shader_pack8 && opt.use_fp16_storage && num_input % 8 == 0 && num_output % 8 == 0;
 
@@ -872,7 +877,7 @@ int Convolution_vulkan::create_pipeline(const Option& _opt)
         }
         pipeline_convolution_gemm->create(shader_type_index, opt, specializations);
     }
-    if (is_conv1x1s1d1)
+    else if (is_conv1x1s1d1)
     {
         bool use_cooperative_matrix = vkdev->info.support_cooperative_matrix_16_8_8() && opt.use_cooperative_matrix && !opt.use_image_storage && !opt.use_shader_pack8 && opt.use_fp16_storage && num_input % 8 == 0 && num_output % 8 == 0;
 
@@ -1221,13 +1226,16 @@ int Convolution_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCom
         bool use_cooperative_matrix = vkdev->info.support_cooperative_matrix_16_8_8() && opt.use_cooperative_matrix && !opt.use_image_storage && !opt.use_shader_pack8 && opt.use_fp16_storage && channels * elempack % 8 == 0 && num_output % 8 == 0;
 
         bool pre_winograd43 = opt.use_winograd43_convolution;
-        if (vkdev->info.type() == 0 && ((w <= 18 && h <= 18) || ((w >= 23 && w <= 24) && (h >= 23 && h <= 24))))
-            pre_winograd43 = false;
-        if (vkdev->info.type() != 0 && (w <= 12 && h <= 12))
-            pre_winograd43 = false;
+        if (opt.use_winograd23_convolution)
+        {
+            if (vkdev->info.type() == 0 && ((w <= 18 && h <= 18) || ((w >= 23 && w <= 24) && (h >= 23 && h <= 24))))
+                pre_winograd43 = false;
+            if (vkdev->info.type() != 0 && (w <= 12 && h <= 12))
+                pre_winograd43 = false;
 
-        if (use_cooperative_matrix && (w <= 18 && h <= 18))
-            pre_winograd43 = false;
+            if (use_cooperative_matrix && (w <= 18 && h <= 18))
+                pre_winograd43 = false;
+        }
 
         if (pre_winograd43)
         {
@@ -1660,10 +1668,13 @@ int Convolution_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_b
     if (opt.use_winograd_convolution && (opt.use_winograd23_convolution || opt.use_winograd43_convolution) && is_conv3x3s1d1 && channels * elempack >= 16 && num_output >= 16)
     {
         bool pre_winograd43 = opt.use_winograd43_convolution;
-        if (vkdev->info.type() == 0 && ((w <= 18 && h <= 18) || ((w >= 23 && w <= 24) && (h >= 23 && h <= 24))))
-            pre_winograd43 = false;
-        if (vkdev->info.type() != 0 && (w <= 12 && h <= 12))
-            pre_winograd43 = false;
+        if (opt.use_winograd23_convolution)
+        {
+            if (vkdev->info.type() == 0 && ((w <= 18 && h <= 18) || ((w >= 23 && w <= 24) && (h >= 23 && h <= 24))))
+                pre_winograd43 = false;
+            if (vkdev->info.type() != 0 && (w <= 12 && h <= 12))
+                pre_winograd43 = false;
+        }
 
         if (pre_winograd43)
         {
