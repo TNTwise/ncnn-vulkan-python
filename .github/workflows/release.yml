@@ -43,7 +43,7 @@ jobs:
   windows:
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
 
     needs: [setup, create-release]
 
@@ -128,19 +128,19 @@ jobs:
         id: cache-vulkansdk-linux
         uses: actions/cache@v3
         with:
-          path: "1.2.189.0"
-          key: vulkansdk-linux-x86_64-1.2.189.0
+          path: "1.3.236.0"
+          key: vulkansdk-linux-x86_64-1.3.236.0
       - name: vulkansdk
         if: steps.cache-vulkansdk-linux.outputs.cache-hit != 'true'
         run: |
-          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/linux/vulkansdk-linux-x86_64-1.2.189.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.2.189.0.tar.gz
-          tar -xf vulkansdk-linux-x86_64-1.2.189.0.tar.gz
-          rm -rf 1.2.189.0/source 1.2.189.0/samples
-          find 1.2.189.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
+          wget https://sdk.lunarg.com/sdk/download/1.3.236.0/linux/vulkansdk-linux-x86_64-1.3.236.0.tar.gz?Human=true -O vulkansdk-linux-x86_64-1.3.236.0.tar.gz
+          tar -xf vulkansdk-linux-x86_64-1.3.236.0.tar.gz
+          rm -rf 1.3.236.0/source 1.3.236.0/samples
+          find 1.3.236.0 -type f | grep -v -E 'vulkan|glslang' | xargs rm
       - name: Build manylinux Python wheels
         uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
         with:
-          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310"
+          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311"
           build-requirements: "cython numpy setuptools wheel ninja cmake build twine"
           system-packages: "vulkan-devel patchelf"
           pre-build-command: "sh prepare_actions.sh"
@@ -181,6 +181,7 @@ jobs:
             "cp38-macosx_x86_64",
             "cp39-macosx_x86_64",
             "cp310-macosx_x86_64",
+            "cp311-macosx_x86_64",
           ]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
@@ -195,15 +196,15 @@ jobs:
         id: cache-vulkansdk-macos-x64
         uses: actions/cache@v1
         with:
-          path: "vulkansdk-macos-1.2.189.0"
-          key: vulkansdk-macos-1.2.189.0
+          path: "vulkansdk-macos-1.3.236.0"
+          key: vulkansdk-macos-1.3.236.0
       - name: vulkansdk
         if: steps.cache-vulkansdk-macos-x64.outputs.cache-hit != 'true'
         run: |
-          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/mac/vulkansdk-macos-1.2.189.0.dmg?Human=true -O vulkansdk-macos-1.2.189.0.dmg
-          hdiutil attach vulkansdk-macos-1.2.189.0.dmg
-          sudo /Volumes/vulkansdk-macos-1.2.189.0/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0 --accept-licenses --default-answer --confirm-command install
-          hdiutil detach /Volumes/vulkansdk-macos-1.2.189.0
+          wget https://sdk.lunarg.com/sdk/download/1.3.236.0/mac/vulkansdk-macos-1.3.236.0.dmg?Human=true -O vulkansdk-macos-1.3.236.0.dmg
+          hdiutil attach vulkansdk-macos-1.3.236.0.dmg
+          sudo /Volumes/vulkansdk-macos-1.3.236.0/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0 --accept-licenses --default-answer --confirm-command install
+          hdiutil detach /Volumes/vulkansdk-macos-1.3.236.0
       - name: cache-openmp-macos-x64
         id: cache-openmp-macos-x64
         uses: actions/cache@v3
@@ -245,7 +246,7 @@ jobs:
           cmake-version: "3.24.1"
       # - name: Build NCNN
       #   run: |
-      #     export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+      #     export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/macOS
       #     mkdir build && cd build
       #     cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_OSX_ARCHITECTURES=x86_64 \
       #       -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
@@ -256,9 +257,9 @@ jobs:
       #     cd ..
       - name: Build Wheel
         run: |
-          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_SYSTEM_PROCESSOR=x86_64,-DCMAKE_OSX_ARCHITECTURES=x86_64,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
+          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_SYSTEM_PROCESSOR=x86_64,-DCMAKE_OSX_ARCHITECTURES=x86_64,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
       - name: Package
         run: |
@@ -288,7 +289,12 @@ jobs:
     strategy:
       matrix:
         python-version:
-          ["cp38-macosx_arm64", "cp39-macosx_arm64", "cp310-macosx_arm64"]
+          [
+            "cp38-macosx_arm64",
+            "cp39-macosx_arm64",
+            "cp310-macosx_arm64",
+            "cp311-macosx_arm64",
+          ]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: arm64
@@ -302,15 +308,15 @@ jobs:
         id: cache-vulkansdk-macos-arm64
         uses: actions/cache@v1
         with:
-          path: "vulkansdk-macos-1.2.189.0"
-          key: vulkansdk-macos-1.2.189.0
+          path: "vulkansdk-macos-1.3.236.0"
+          key: vulkansdk-macos-1.3.236.0
       - name: vulkansdk
         if: steps.cache-vulkansdk-macos-arm64.outputs.cache-hit != 'true'
         run: |
-          wget https://sdk.lunarg.com/sdk/download/1.2.189.0/mac/vulkansdk-macos-1.2.189.0.dmg?Human=true -O vulkansdk-macos-1.2.189.0.dmg
-          hdiutil attach vulkansdk-macos-1.2.189.0.dmg
-          sudo /Volumes/vulkansdk-macos-1.2.189.0/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0 --accept-licenses --default-answer --confirm-command install
-          hdiutil detach /Volumes/vulkansdk-macos-1.2.189.0
+          wget https://sdk.lunarg.com/sdk/download/1.3.236.0/mac/vulkansdk-macos-1.3.236.0.dmg?Human=true -O vulkansdk-macos-1.3.236.0.dmg
+          hdiutil attach vulkansdk-macos-1.3.236.0.dmg
+          sudo /Volumes/vulkansdk-macos-1.3.236.0/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0 --accept-licenses --default-answer --confirm-command install
+          hdiutil detach /Volumes/vulkansdk-macos-1.3.236.0
       #   - name: protobuf
       #     run: brew install protobuf opencv
       - name: cache-openmp-macos-arm64
@@ -354,22 +360,22 @@ jobs:
           cmake-version: "3.24.1"
       # - name: Build NCNN
       #   run: |
-      #     export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+      #     export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/macOS
       #     mkdir build && cd build
       #     cmake -DUSE_STATIC_MOLTENVK=ON -DCMAKE_CROSSCOMPILING=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 -DCMAKE_OSX_ARCHITECTURES=arm64 \
       #       -DOpenMP_C_FLAGS="-Xclang -fopenmp" -DOpenMP_CXX_FLAGS="-Xclang -fopenmp" \
       #       -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" \
       #       -DOpenMP_libomp_LIBRARY="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a" \
-      #       -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include \
-      #       -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
+      #       -DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/include \
+      #       -DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/dylib/macOS/libMoltenVK.dylib \
       #       -DNCNN_VULKAN=ON -DNCNN_BUILD_TOOLS=OFF -DNCNN_BUILD_EXAMPLES=OFF -DNCNN_BUILD_BENCHMARK=OFF ..
       #     cmake --build . -j 3
       #     cd ..
       - name: Build Wheel
         run: |
-          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/macOS
+          export VULKAN_SDK=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/macOS
           export GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_CROSSCOMPILING=ON,-DCMAKE_SYSTEM_PROCESSOR=arm64,-DCMAKE_OSX_ARCHITECTURES=arm64,-DNCNN_TARGET_ARCH=arm,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.2.189.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
+          export CMAKE_ARGS="-DUSE_STATIC_MOLTENVK=ON,-DCMAKE_CROSSCOMPILING=ON,-DCMAKE_SYSTEM_PROCESSOR=arm64,-DCMAKE_OSX_ARCHITECTURES=arm64,-DNCNN_TARGET_ARCH=arm,-DOpenMP_C_FLAGS=-Xclang -fopenmp,-DOpenMP_CXX_FLAGS=-Xclang -fopenmp,-DOpenMP_C_LIB_NAMES=libomp,-DOpenMP_CXX_LIB_NAMES=libomp,-DOpenMP_libomp_LIBRARY=$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libomp.a,-DVulkan_INCLUDE_DIR=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/include,-DVulkan_LIBRARY=$GITHUB_WORKSPACE/vulkansdk-macos-1.3.236.0/MoltenVK/dylib/macOS/libMoltenVK.dylib,-DNCNN_VULKAN=ON,-DNCNN_BUILD_TOOLS=OFF,-DNCNN_BUILD_EXAMPLES=OFF"
           python -m cibuildwheel --output-dir dist
       - name: Package
         run: |
