@@ -43,7 +43,7 @@ jobs:
   windows:
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12"]
 
     needs: [setup, create-release]
 
@@ -99,20 +99,14 @@ jobs:
           asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_content_type: application/zip
-      - name: Upload to PyPI
-        run: |
-          python3 -m twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_REPOSITORY: pypi
+   
 
   linux:
     strategy:
       matrix:
-        python-version: ["3.8"]
+        python-version: ["3.12"]
     needs: [setup, create-release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-ubuntu
       DEBIAN_FRONTEND: noninteractive
@@ -162,13 +156,7 @@ jobs:
       - name: Install twine
         run: |
           pip install twine
-      - name: Upload to PyPI
-        run: |
-          python3 -m twine upload dist/*manylinux2014_x86_64.whl
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_REPOSITORY: pypi
+   
 
   macos-x64:
     needs: [setup, create-release]
@@ -176,12 +164,11 @@ jobs:
       matrix:
         python-version:
           [
-            "cp36-macosx_x86_64",
-            "cp37-macosx_x86_64",
             "cp38-macosx_x86_64",
             "cp39-macosx_x86_64",
             "cp310-macosx_x86_64",
             "cp311-macosx_x86_64",
+            "cp312-macosx_x86_64",
           ]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
@@ -276,13 +263,7 @@ jobs:
           asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_content_type: application/zip
-      - name: Upload to PyPI
-        run: |
-          python3 -m twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_REPOSITORY: pypi
+     
 
   macos-arm64:
     needs: [setup, create-release]
@@ -392,10 +373,4 @@ jobs:
           asset_path: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_name: ${{ env.PACKAGENAME }}_${{ matrix.python-version }}.zip
           asset_content_type: application/zip
-      - name: Upload to PyPI
-        run: |
-          python3 -m twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_REPOSITORY: pypi
+  
