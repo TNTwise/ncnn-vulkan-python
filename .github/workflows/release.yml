@@ -135,7 +135,7 @@ jobs:
       - name: Build manylinux Python wheels
         uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
         with:
-          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311"
+          python-versions: "cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311 cp312-cp312"
           build-requirements: "cython numpy setuptools wheel ninja cmake build twine"
           system-packages: "vulkan-devel patchelf"
           pre-build-command: "sh prepare_actions.sh"
