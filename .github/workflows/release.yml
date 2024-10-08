@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - "*"
+  workflow-dispatch:
 env:
   DEVELOPER_DIR: /Applications/Xcode_14.0.1.app/Contents/Developer
 jobs:
@@ -174,15 +175,7 @@ jobs:
     needs: [setup, create-release]
     strategy:
       matrix:
-        python-version:
-          [
-            "cp36-macosx_x86_64",
-            "cp37-macosx_x86_64",
-            "cp38-macosx_x86_64",
-            "cp39-macosx_x86_64",
-            "cp310-macosx_x86_64",
-            "cp311-macosx_x86_64",
-          ]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
     env:
       PACKAGENAME: ${{ needs.setup.outputs.APPNAME }}-${{ needs.setup.outputs.VERSION }}-macos
       CIBW_ARCHS: x86_64
